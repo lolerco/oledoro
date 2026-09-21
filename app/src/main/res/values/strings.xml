@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">oledoro</string>
+    <string name="channel_live_updates_name">oledoro Live Updates</string>
+    <string name="channel_live_updates_description">Ongoing timer live updates and lock screen action card</string>
+    <string name="channel_alerts_name">oledoro Alerts</string>
+    <string name="channel_alerts_description">Sound and vibration alerts when a timer phase completes</string>
+    <string name="phase_focus">Focus</string>
+    <string name="phase_short_break">Short Break</string>
+    <string name="phase_long_break">Long Break</string>
+    <string name="action_start">Start</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Resume</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_start_break">Start Break</string>
+    <string name="action_start_focus">Start Focus</string>
+    <string name="notification_timer_finished_title">oledoro Finished!</string>
+    <string name="notification_timer_finished_focus">Focus session complete. Time for a break!</string>
+    <string name="notification_timer_finished_break">Break complete. Ready to focus?</string>
+    <string name="notification_permission_banner">Lock screen live card requires notification permission - tap to enable</string>
+</resources>

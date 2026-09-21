@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Mechanical Timer Crown and Stem -->
+    <!-- Top Crown Button (Gruvbox Aqua #8EC07C) -->
+    <path
+        android:fillColor="#8EC07C"
+        android:pathData="M48.5,18 h11 v3.5 h-11 z" />
+
+    <!-- Crown Stem (Gruvbox Aqua #8EC07C) -->
+    <path
+        android:fillColor="#8EC07C"
+        android:pathData="M52.5,21.5 h3 v3.5 h-3 z" />
+
+    <!-- Left Angled Stopwatch Shoulder (Gruvbox Aqua #8EC07C) -->
+    <path
+        android:strokeColor="#8EC07C"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M35,26 L31.5,22.5" />
+
+    <!-- Right Angled Stopwatch Shoulder (Gruvbox Orange #FE8019) -->
+    <path
+        android:strokeColor="#FE8019"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M73,26 L76.5,22.5" />
+
+    <!-- Segmented Timer Dial / Progress Ring -->
+    <!-- Primary Focus Arc (270° clockwise from 12 o'clock to 9 o'clock) (Gruvbox Orange #FE8019) -->
+    <path
+        android:strokeColor="#FE8019"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,28 A26,26 0 1,1 28,54" />
+
+    <!-- Break Segment Arc (~60° from 9:30 to 11:30) (Gruvbox Aqua #8EC07C) -->
+    <path
+        android:strokeColor="#8EC07C"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M29,47 A26,26 0 0,1 47,29" />
+
+    <!-- Dial Cardinal Index Dots (Gruvbox Yellow #FABD2F) -->
+    <!-- 12 o'clock -->
+    <path
+        android:fillColor="#FABD2F"
+        android:pathData="M54,34 A1.5,1.5 0 1,1 54,37 A1.5,1.5 0 1,1 54,34" />
+    <!-- 3 o'clock -->
+    <path
+        android:fillColor="#FABD2F"
+        android:pathData="M73,53 A1.5,1.5 0 1,1 73,56 A1.5,1.5 0 1,1 73,53" />
+    <!-- 6 o'clock -->
+    <path
+        android:fillColor="#FABD2F"
+        android:pathData="M54,72 A1.5,1.5 0 1,1 54,75 A1.5,1.5 0 1,1 54,72" />
+    <!-- 9 o'clock -->
+    <path
+        android:fillColor="#FABD2F"
+        android:pathData="M35,53 A1.5,1.5 0 1,1 35,56 A1.5,1.5 0 1,1 35,53" />
+
+    <!-- Nerd Monospaced Terminal Glyph: Chevron '>' (Gruvbox Yellow #FABD2F) -->
+    <path
+        android:strokeColor="#FABD2F"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M43,47 L50,53 L43,59" />
+
+    <!-- Nerd Monospaced Terminal Cursor '_' (Gruvbox Orange #FE8019) -->
+    <path
+        android:strokeColor="#FE8019"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M54,59 L65,59" />
+
+</vector>
