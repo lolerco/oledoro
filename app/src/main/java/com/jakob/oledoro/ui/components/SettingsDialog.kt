@@ -50,6 +50,10 @@ import kotlin.math.roundToInt
 fun SettingsDialog(
     selectedThemeColor: GruvboxColor,
     onThemeColorChange: (GruvboxColor) -> Unit,
+    selectedBreakColor: GruvboxColor = GruvboxColor.AQUA,
+    onBreakColorChange: (GruvboxColor) -> Unit = {},
+    selectedNegativeColor: GruvboxColor = GruvboxColor.RED,
+    onNegativeColorChange: (GruvboxColor) -> Unit = {},
     dimPercentage: Int,
     onDimPercentageChange: (Int) -> Unit,
     focusMinutes: Int,
@@ -112,54 +116,33 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Gruvbox Theme Palette
-                Text(
-                    text = "THEME COLOR (GRUVBOX)",
-                    fontFamily = JetBrainsMono,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    color = AmbientCoolGray,
-                    letterSpacing = 1.sp
+                // Main Accent Color (Gruvbox)
+                ColorPickerSection(
+                    title = "MAIN ACCENT COLOR",
+                    selectedColor = selectedThemeColor,
+                    onColorSelected = onThemeColorChange,
+                    context = context
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    GruvboxColor.entries.forEach { gruvboxColor ->
-                        val isSelected = gruvboxColor == selectedThemeColor
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(gruvboxColor.color)
-                                .clickable {
-                                    HapticHelper.performClick(context)
-                                    onThemeColorChange(gruvboxColor)
-                                }
-                                .then(
-                                    if (isSelected) {
-                                        Modifier.border(2.dp, Color.White, CircleShape)
-                                    } else {
-                                        Modifier
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Selected",
-                                    tint = OledBlack,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                }
+                // Break Timer Color (Gruvbox)
+                ColorPickerSection(
+                    title = "BREAK TIMER COLOR",
+                    selectedColor = selectedBreakColor,
+                    onColorSelected = onBreakColorChange,
+                    context = context
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Negative / Overtime Color (Gruvbox)
+                ColorPickerSection(
+                    title = "NEGATIVE TIMER COLOR",
+                    selectedColor = selectedNegativeColor,
+                    onColorSelected = onNegativeColorChange,
+                    context = context
+                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -351,7 +334,7 @@ fun SettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "AUTO-BRIGHTEN ON FINISH",
+                            text = "AUTO LIGHTBULB",
                             fontFamily = JetBrainsMono,
                             fontWeight = FontWeight.Medium,
                             fontSize = 12.sp,
@@ -360,7 +343,7 @@ fun SettingsDialog(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Turn light bulb on when session ends",
+                            text = "dim when session starts, light up when finished",
                             fontFamily = JetBrainsMono,
                             fontSize = 10.sp,
                             color = AmbientDimGray
@@ -452,6 +435,75 @@ fun SettingsDialog(
                             lineHeight = 16.sp
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorPickerSection(
+    title: String,
+    selectedColor: GruvboxColor,
+    onColorSelected: (GruvboxColor) -> Unit,
+    context: android.content.Context
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            fontFamily = JetBrainsMono,
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            color = AmbientCoolGray,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = selectedColor.displayName.uppercase(),
+            fontFamily = JetBrainsMono,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = selectedColor.color
+        )
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        GruvboxColor.entries.forEach { gruvboxColor ->
+            val isSelected = gruvboxColor == selectedColor
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(gruvboxColor.color)
+                    .clickable {
+                        HapticHelper.performClick(context)
+                        onColorSelected(gruvboxColor)
+                    }
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(2.dp, Color.White, CircleShape)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "${gruvboxColor.displayName} Selected",
+                        tint = OledBlack,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }

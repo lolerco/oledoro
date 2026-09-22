@@ -24,6 +24,12 @@ class AppSettingsManager(context: Context) {
     private val _themeColor = MutableStateFlow(loadThemeColor())
     val themeColor: StateFlow<GruvboxColor> = _themeColor.asStateFlow()
 
+    private val _breakColor = MutableStateFlow(loadBreakColor())
+    val breakColor: StateFlow<GruvboxColor> = _breakColor.asStateFlow()
+
+    private val _negativeColor = MutableStateFlow(loadNegativeColor())
+    val negativeColor: StateFlow<GruvboxColor> = _negativeColor.asStateFlow()
+
     private val _isDimmingActive = MutableStateFlow(loadDimmingActive())
     val isDimmingActive: StateFlow<Boolean> = _isDimmingActive.asStateFlow()
 
@@ -44,10 +50,21 @@ class AppSettingsManager(context: Context) {
 
     private val _autoBrightenOnFinish = MutableStateFlow(loadAutoBrightenOnFinish())
     val autoBrightenOnFinish: StateFlow<Boolean> = _autoBrightenOnFinish.asStateFlow()
+    val autoLightbulb: StateFlow<Boolean> get() = autoBrightenOnFinish
 
     fun setThemeColor(color: GruvboxColor) {
         _themeColor.value = color
         prefs.edit().putString(KEY_THEME_COLOR, color.name).apply()
+    }
+
+    fun setBreakColor(color: GruvboxColor) {
+        _breakColor.value = color
+        prefs.edit().putString(KEY_BREAK_COLOR, color.name).apply()
+    }
+
+    fun setNegativeColor(color: GruvboxColor) {
+        _negativeColor.value = color
+        prefs.edit().putString(KEY_NEGATIVE_COLOR, color.name).apply()
     }
 
     fun setDimmingActive(active: Boolean) {
@@ -95,11 +112,29 @@ class AppSettingsManager(context: Context) {
     }
 
     private fun loadThemeColor(): GruvboxColor {
-        val name = prefs.getString(KEY_THEME_COLOR, GruvboxColor.YELLOW.name) ?: GruvboxColor.YELLOW.name
+        val name = prefs.getString(KEY_THEME_COLOR, DEFAULT_THEME_COLOR.name) ?: DEFAULT_THEME_COLOR.name
         return try {
             GruvboxColor.valueOf(name)
         } catch (e: Exception) {
-            GruvboxColor.YELLOW
+            DEFAULT_THEME_COLOR
+        }
+    }
+
+    private fun loadBreakColor(): GruvboxColor {
+        val name = prefs.getString(KEY_BREAK_COLOR, DEFAULT_BREAK_COLOR.name) ?: DEFAULT_BREAK_COLOR.name
+        return try {
+            GruvboxColor.valueOf(name)
+        } catch (e: Exception) {
+            DEFAULT_BREAK_COLOR
+        }
+    }
+
+    private fun loadNegativeColor(): GruvboxColor {
+        val name = prefs.getString(KEY_NEGATIVE_COLOR, DEFAULT_NEGATIVE_COLOR.name) ?: DEFAULT_NEGATIVE_COLOR.name
+        return try {
+            GruvboxColor.valueOf(name)
+        } catch (e: Exception) {
+            DEFAULT_NEGATIVE_COLOR
         }
     }
 
@@ -134,6 +169,8 @@ class AppSettingsManager(context: Context) {
     companion object {
         private const val PREFS_NAME = "oledoro_prefs"
         private const val KEY_THEME_COLOR = "key_theme_color"
+        private const val KEY_BREAK_COLOR = "key_break_color"
+        private const val KEY_NEGATIVE_COLOR = "key_negative_color"
         private const val KEY_DIMMING_ACTIVE = "key_dimming_active"
         private const val KEY_DIM_PERCENTAGE = "key_dim_percentage"
         private const val KEY_FOCUS_MINUTES = "key_focus_minutes"
@@ -141,6 +178,10 @@ class AppSettingsManager(context: Context) {
         private const val KEY_LONG_BREAK_MINUTES = "key_long_break_minutes"
         private const val KEY_LONG_BREAK_INTERVAL = "key_long_break_interval"
         private const val KEY_AUTO_BRIGHTEN_ON_FINISH = "key_auto_brighten_on_finish"
+
+        val DEFAULT_THEME_COLOR = GruvboxColor.YELLOW
+        val DEFAULT_BREAK_COLOR = GruvboxColor.AQUA
+        val DEFAULT_NEGATIVE_COLOR = GruvboxColor.RED
 
         const val DEFAULT_DIM_PERCENTAGE = 5
         const val DEFAULT_FOCUS_MINUTES = 25

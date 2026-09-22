@@ -7,24 +7,26 @@
 │                                   Presentation Layer                                   │
 │  ┌──────────────────────────────────────────┐   ┌───────────────────────────────────┐  │
 │  │         AmbientScreen (Compose)          │   │          SettingsDialog           │  │
-│  │  - Stationary Centered Compose Layout    │   │  - Focus Duration Slider (1..90m) │  │
-│  │    (Zero-Shift Timer + Controls Below)   │   │  - Short Break Slider (1..30m)    │  │
-│  │  - Reversed Lightbulb Indicator          │   │  - Long Break Slider (1..60m)     │  │
-│  │    (Bright=Filled, Dark=Outline)         │   │  - Break Interval Slider (1..10r) │  │
-│  │  - Anti-Burn-In Pixel Shift (±4dp)       │   │  - Auto-Brighten on Finish Switch │  │
-│  │  - Dynamic NextPhasePreview Display      │   │  - Dim Level Slider (1..50%)      │  │
-│  │  - Overtime Display (-MM:SS)             │   │  - Gruvbox Theme Palette Swatches │  │
-│  │  - Tactile Haptics (Click & Micro-Tick)  │   │  - Creator Credits (lolerco)      │  │
+│  │  - Stationary Centered Compose Layout    │   │  - Main Accent Color Swatches     │  │
+│  │    (Zero-Shift Timer + Controls Below)   │   │  - Break Timer Color Swatches     │  │
+│  │  - Reversed Lightbulb Indicator          │   │  - Negative Timer Color Swatches  │  │
+│  │    (Bright=Filled, Dark=Outline)         │   │  - Focus Duration Slider (1..90m) │  │
+│  │  - Anti-Burn-In Pixel Shift (±4dp)       │   │  - Short Break Slider (1..30m)    │  │
+│  │  - Dynamic NextPhasePreview Display      │   │  - Long Break Slider (1..60m)     │  │
+│  │  - Overtime Display (-MM:SS)             │   │  - Break Interval Slider (1..10r) │  │
+│  │  - Independent Element Color Tinting     │   │  - Auto Lightbulb Toggle Switch   │  │
+│  │  - Tactile Haptics (Click & Micro-Tick)  │   │  - Dim Level Slider (1..50%)      │  │
+│  │                                          │   │  - Creator Credits (lolerco)      │  │
 │  └────────────────────┬─────────────────────┘   └─────────────────┬─────────────────┘  │
 │                       │                                           │                    │
 │                       ▼                                           ▼                    │
 │  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
 │  │                                  MainViewModel                                   │  │
-│  │  - Collects TimerState, GruvboxColor, Dimming, Durations, and Interval           │  │
+│  │  - Collects TimerState, themeColor, breakColor, negativeColor, Dimming, etc.     │  │
 │  │  - Coordinates Settings Persistence via AppSettingsManager                       │  │
 │  │  - Propagates Duration & Interval Updates to TimerEngine (syncEngineDurations)   │  │
-│  │  - Dispatches ACTION_SYNC to TimerForegroundService on Duration Changes          │  │
-│  │  - Observes PhaseCompleted -> Conditionally Deactivates Dimming                  │  │
+│  │  - Two-Way Auto Toggle: Auto-dims on IDLE start; auto-brightens on completion    │  │
+│  │  - Preserves Manual Brightness Toggle during running sessions (idempotent ticks) │  │
 │  └────────────────────┬───────────────────────────────────────────┬─────────────────┘  │
 └───────────────────────┼───────────────────────────────────────────┼────────────────────┘
                         │                                           │
@@ -35,14 +37,16 @@
 │  │             AppSettingsManager             │  │   │  │        TimerEngine        │  │
 │  │  - SharedPreferences Persistence           │  │   │  │  - Dynamic updateDurations│  │
 │  │  - Reactive StateFlows:                    │  │   │  │  - Configurable Intervals │  │
-│  │    • themeColor (GruvboxColor)             │  │   │  │  - Dynamic nextPhasePreview│  │
-│  │    • isDimmingActive (Boolean)             │  │   │  │  - Negative Overtime Tick │  │
-│  │    • dimPercentage (1..50)                 │  │   │  │  - SharedFlow<TimerEvent> │  │
-│  │    • focusMinutes (1..90)                  │  │   │  └─────────────┬─────────────┘  │
-│  │    • shortBreakMinutes (1..30)             │  │   └────────────────┼────────────────┘
+│  │    • themeColor (GruvboxColor, default YEL)│  │   │  │  - Dynamic nextPhasePreview│  │
+│  │    • breakColor (GruvboxColor, default AQU)│  │   │  │  - Negative Overtime Tick │  │
+│  │    • negativeColor (GruvboxColor, def RED) │  │   │  │  - SharedFlow<TimerEvent> │  │
+│  │    • isDimmingActive (Boolean)             │  │   │  └─────────────┬─────────────┘  │
+│  │    • dimPercentage (1..50)                 │  │   └────────────────┼────────────────┘
+│  │    • focusMinutes (1..90)                  │  │                    │
+│  │    • shortBreakMinutes (1..30)             │  │                    │
 │  │    • longBreakMinutes (1..60)              │  │                    │
 │  │    • longBreakInterval (1..10)             │  │                    │
-│  │    • autoBrightenOnFinish (Boolean)        │  │                    │
+│  │    • autoBrightenOnFinish / autoLightbulb  │  │                    │
 │  └────────────────────────────────────────────┘  │                    │
 └──────────────────────────────────────────────────┘                    │
                         │                                               │

@@ -25,6 +25,7 @@ import com.jakob.oledoro.data.GruvboxColor
 import com.jakob.oledoro.domain.TimerEngine
 import com.jakob.oledoro.domain.TimerEvent
 import com.jakob.oledoro.domain.TimerState
+import com.jakob.oledoro.domain.TimerStatus
 import com.jakob.oledoro.service.TimerForegroundService
 import com.jakob.oledoro.ui.ambient.AmbientController
 import com.jakob.oledoro.ui.screens.AmbientScreen
@@ -58,6 +59,8 @@ class MainViewModel : ViewModel() {
 
     val timerState: StateFlow<TimerState> = engine.state
     val themeColor: StateFlow<GruvboxColor> = settingsManager.themeColor
+    val breakColor: StateFlow<GruvboxColor> = settingsManager.breakColor
+    val negativeColor: StateFlow<GruvboxColor> = settingsManager.negativeColor
     val isDimmingActive: StateFlow<Boolean> = settingsManager.isDimmingActive
     val dimPercentage: StateFlow<Int> = settingsManager.dimPercentage
     val focusMinutes: StateFlow<Int> = settingsManager.focusMinutes
@@ -69,8 +72,8 @@ class MainViewModel : ViewModel() {
     init {
         engine.events.onEach { event ->
             if (event is TimerEvent.PhaseCompleted) {
-                // Auto-brighten on session completion: if enabled and dimming is active, deactivate it
-                if (settingsManager.autoBrightenOnFinish.value && settingsManager.isDimmingActive.value) {
+                // Two-way auto toggle: when timer is over, light up if auto toggle is on
+                if (settingsManager.autoBrightenOnFinish.value) {
                     settingsManager.setDimmingActive(false)
                 }
             }
@@ -78,6 +81,10 @@ class MainViewModel : ViewModel() {
     }
 
     fun start() {
+        // Two-way auto toggle: when starting any session from IDLE, dim the screen
+        if (settingsManager.autoBrightenOnFinish.value && engine.state.value.status == TimerStatus.IDLE) {
+            settingsManager.setDimmingActive(true)
+        }
         engine.startTicker(viewModelScope)
     }
 
@@ -99,6 +106,14 @@ class MainViewModel : ViewModel() {
 
     fun setThemeColor(color: GruvboxColor) {
         settingsManager.setThemeColor(color)
+    }
+
+    fun setBreakColor(color: GruvboxColor) {
+        settingsManager.setBreakColor(color)
+    }
+
+    fun setNegativeColor(color: GruvboxColor) {
+        settingsManager.setNegativeColor(color)
     }
 
     fun setDimPercentage(percentage: Int) {
@@ -172,6 +187,8 @@ class MainActivity : ComponentActivity() {
             OledPomodoroTheme {
                 val timerState by viewModel.timerState.collectAsStateWithLifecycle()
                 val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+                val breakColor by viewModel.breakColor.collectAsStateWithLifecycle()
+                val negativeColor by viewModel.negativeColor.collectAsStateWithLifecycle()
                 val isDimmingActive by viewModel.isDimmingActive.collectAsStateWithLifecycle()
                 val dimPercentage by viewModel.dimPercentage.collectAsStateWithLifecycle()
                 val focusMinutes by viewModel.focusMinutes.collectAsStateWithLifecycle()
@@ -183,6 +200,8 @@ class MainActivity : ComponentActivity() {
                 AmbientScreen(
                     state = timerState,
                     themeColor = themeColor,
+                    breakColor = breakColor,
+                    negativeColor = negativeColor,
                     isDimmingActive = isDimmingActive,
                     dimPercentage = dimPercentage,
                     focusMinutes = focusMinutes,
@@ -194,6 +213,8 @@ class MainActivity : ComponentActivity() {
                     onRequestNotificationPermission = { openNotificationSettingsOrRequestPermission() },
                     onToggleDimming = { viewModel.toggleDimming() },
                     onThemeColorChange = { viewModel.setThemeColor(it) },
+                    onBreakColorChange = { viewModel.setBreakColor(it) },
+                    onNegativeColorChange = { viewModel.setNegativeColor(it) },
                     onDimPercentageChange = { viewModel.setDimPercentage(it) },
                     onFocusMinutesChange = { viewModel.setFocusMinutes(it) },
                     onShortBreakMinutesChange = { viewModel.setShortBreakMinutes(it) },

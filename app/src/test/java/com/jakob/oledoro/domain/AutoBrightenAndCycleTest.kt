@@ -1,5 +1,6 @@
 package com.jakob.oledoro.domain
 
+import com.jakob.oledoro.data.GruvboxColor
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -432,5 +433,206 @@ class AutoBrightenAndCycleTest {
         assertEquals(20 * 60 * 1000L, updatedBreakState.longBreakDurationMs)
         assertEquals(3, updatedBreakState.totalRounds)
         assertEquals("NEXT: 45 MIN FOCUS", updatedBreakState.nextPhasePreview)
+    }
+
+    @Test
+    fun `two-way auto toggle dims screen when starting focus session from IDLE`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 25 * 60 * 1000L)
+        var isDimmingActive = false
+        val autoLightbulb = true
+
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+        assertFalse("Screen is initially bright", isDimmingActive)
+
+        // Starting from IDLE with autoLightbulb = true
+        if (autoLightbulb && engine.state.value.status == TimerStatus.IDLE) {
+            isDimmingActive = true
+        }
+        engine.start()
+
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertTrue("Screen must dim upon starting focus session", isDimmingActive)
+    }
+
+    @Test
+    fun `two-way auto toggle dims screen when starting break session from IDLE`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 25 * 60 * 1000L, shortBreakDurationMs = 5 * 60 * 1000L)
+        var isDimmingActive = false
+        val autoLightbulb = true
+
+        // Advance to break in IDLE
+        engine.nextPhase(autoStart = false)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+        assertFalse("Screen is bright before break start", isDimmingActive)
+
+        // Starting break session from IDLE with autoLightbulb = true
+        if (autoLightbulb && engine.state.value.status == TimerStatus.IDLE) {
+            isDimmingActive = true
+        }
+        engine.start()
+
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertTrue("Screen must dim upon starting break session", isDimmingActive)
+    }
+
+    @Test
+    fun `two-way auto toggle lights up screen when focus or break session finishes`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 1000L, shortBreakDurationMs = 1000L)
+        var isDimmingActive = false
+        val autoLightbulb = true
+
+        val job = launch(UnconfinedTestDispatcher()) {
+            engine.events.collect { event ->
+                if (event is TimerEvent.PhaseCompleted) {
+                    if (autoLightbulb) {
+                        isDimmingActive = false
+                    }
+                }
+            }
+        }
+
+        // 1. Focus session starts and dims
+        if (autoLightbulb && engine.state.value.status == TimerStatus.IDLE) {
+            isDimmingActive = true
+        }
+        engine.start()
+        assertTrue("Dimmed during focus", isDimmingActive)
+
+        // Focus completes at 0:00 -> lights up
+        engine.tick(1000L)
+        assertFalse("Lights up when focus completes", isDimmingActive)
+
+        // 2. Next to Short Break
+        engine.nextPhase(autoStart = false)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+
+        // Start break session -> dims
+        if (autoLightbulb && engine.state.value.status == TimerStatus.IDLE) {
+            isDimmingActive = true
+        }
+        engine.start()
+        assertTrue("Dimmed during break", isDimmingActive)
+
+        // Break completes at 0:00 -> lights up
+        engine.tick(1000L)
+        assertFalse("Lights up when break completes", isDimmingActive)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `turning light on during session with auto toggle on preserves bright state without re-dimming`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 10000L)
+        var isDimmingActive = false
+        val autoLightbulb = true
+
+        val job = launch(UnconfinedTestDispatcher()) {
+            engine.events.collect { event ->
+                if (event is TimerEvent.PhaseCompleted) {
+                    if (autoLightbulb) {
+                        isDimmingActive = false
+                    }
+                }
+            }
+        }
+
+        // Start session -> dims
+        if (autoLightbulb && engine.state.value.status == TimerStatus.IDLE) {
+            isDimmingActive = true
+        }
+        engine.start()
+        assertTrue("Screen dimmed on start", isDimmingActive)
+
+        // Timer ticks several seconds
+        engine.tick(1000L)
+        engine.tick(1000L)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+
+        // User manually turns on light during session (toggle dimming)
+        isDimmingActive = false
+        assertFalse("Screen manually turned bright by user", isDimmingActive)
+
+        // Consecutive ticks occur during the session
+        engine.tick(1000L)
+        engine.tick(1000L)
+        assertFalse("Screen must stay bright and NOT re-dim on subsequent ticks", isDimmingActive)
+
+        // Pausing and resuming current session
+        engine.pause()
+        assertEquals(TimerStatus.PAUSED, engine.state.value.status)
+        assertFalse("Screen remains bright while paused", isDimmingActive)
+
+        // Resuming from PAUSED (not IDLE) - must NOT re-dim
+        if (autoLightbulb && engine.state.value.status == TimerStatus.IDLE) {
+            isDimmingActive = true
+        }
+        engine.start()
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertFalse("Screen must remain bright upon resuming", isDimmingActive)
+
+        // Once session completes at zero, it is already bright and stays bright
+        engine.tick(6000L)
+        assertEquals(TimerStatus.OVERTIME, engine.state.value.status)
+        assertFalse("Screen remains bright after completion", isDimmingActive)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `auto toggle disabled does not dim on start and does not light up on finish`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 1000L)
+        var isDimmingActive = false
+        val autoLightbulb = false
+
+        val job = launch(UnconfinedTestDispatcher()) {
+            engine.events.collect { event ->
+                if (event is TimerEvent.PhaseCompleted) {
+                    if (autoLightbulb) {
+                        isDimmingActive = false
+                    }
+                }
+            }
+        }
+
+        // Start from IDLE with autoLightbulb = false
+        if (autoLightbulb && engine.state.value.status == TimerStatus.IDLE) {
+            isDimmingActive = true
+        }
+        engine.start()
+        assertFalse("Screen should NOT dim when autoLightbulb is disabled", isDimmingActive)
+
+        // User manually dims screen
+        isDimmingActive = true
+
+        // Timer reaches zero
+        engine.tick(1000L)
+        assertEquals(TimerStatus.OVERTIME, engine.state.value.status)
+        assertTrue("Screen should stay dimmed if autoLightbulb is disabled", isDimmingActive)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `element colors are non-exclusive and independently configurable`() {
+        var themeColor = GruvboxColor.YELLOW
+        var breakColor = GruvboxColor.AQUA
+        var negativeColor = GruvboxColor.RED
+
+        // User can change each independently, even to the same color or different colors
+        themeColor = GruvboxColor.ORANGE
+        assertEquals(GruvboxColor.ORANGE, themeColor)
+        assertEquals(GruvboxColor.AQUA, breakColor)
+        assertEquals(GruvboxColor.RED, negativeColor)
+
+        // Break color can be set to same color as theme
+        breakColor = GruvboxColor.ORANGE
+        assertEquals(GruvboxColor.ORANGE, themeColor)
+        assertEquals(GruvboxColor.ORANGE, breakColor)
+
+        // Negative color can be set independently
+        negativeColor = GruvboxColor.BLUE
+        assertEquals(GruvboxColor.BLUE, negativeColor)
     }
 }

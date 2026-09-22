@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jakob.oledoro.R
 import com.jakob.oledoro.data.GruvboxColor
+import com.jakob.oledoro.domain.TimerPhase
 import com.jakob.oledoro.domain.TimerState
 import com.jakob.oledoro.domain.TimerStatus
 import com.jakob.oledoro.ui.ambient.AmbientModeEffect
@@ -62,6 +63,8 @@ import com.jakob.oledoro.ui.utils.HapticHelper
 fun AmbientScreen(
     state: TimerState,
     themeColor: GruvboxColor,
+    breakColor: GruvboxColor = GruvboxColor.AQUA,
+    negativeColor: GruvboxColor = GruvboxColor.RED,
     isDimmingActive: Boolean,
     dimPercentage: Int,
     focusMinutes: Int = 25,
@@ -73,6 +76,8 @@ fun AmbientScreen(
     onRequestNotificationPermission: () -> Unit = {},
     onToggleDimming: () -> Unit,
     onThemeColorChange: (GruvboxColor) -> Unit,
+    onBreakColorChange: (GruvboxColor) -> Unit = {},
+    onNegativeColorChange: (GruvboxColor) -> Unit = {},
     onDimPercentageChange: (Int) -> Unit,
     onFocusMinutesChange: (Int) -> Unit = {},
     onShortBreakMinutesChange: (Int) -> Unit = {},
@@ -100,8 +105,17 @@ fun AmbientScreen(
     var settingsDialogVisible by remember { mutableStateOf(false) }
 
     val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
-    val primaryColor = if (isOvertime) OvertimeRed else themeColor.color
-    val secondaryColor = if (isOvertime) OvertimeRed.copy(alpha = 0.8f) else AmbientCoolGray
+    val isBreak = state.phase == TimerPhase.SHORT_BREAK || state.phase == TimerPhase.LONG_BREAK
+    val primaryColor = when {
+        isOvertime -> negativeColor.color
+        isBreak -> breakColor.color
+        else -> themeColor.color
+    }
+    val secondaryColor = when {
+        isOvertime -> negativeColor.color.copy(alpha = 0.8f)
+        isBreak -> breakColor.color.copy(alpha = 0.8f)
+        else -> AmbientCoolGray
+    }
 
     val context = LocalContext.current
 
@@ -273,6 +287,10 @@ fun AmbientScreen(
             SettingsDialog(
                 selectedThemeColor = themeColor,
                 onThemeColorChange = onThemeColorChange,
+                selectedBreakColor = breakColor,
+                onBreakColorChange = onBreakColorChange,
+                selectedNegativeColor = negativeColor,
+                onNegativeColorChange = onNegativeColorChange,
                 dimPercentage = dimPercentage,
                 onDimPercentageChange = onDimPercentageChange,
                 focusMinutes = focusMinutes,

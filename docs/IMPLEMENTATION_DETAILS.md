@@ -546,20 +546,48 @@ if (reachedZeroOrOvertime) {
 }
 ```
 
-### 9.2 Event Consumption in MainViewModel
+### 9.2 Two-Way Auto Dimming and Brightening in MainViewModel & ForegroundService
 In `MainActivity.kt`:
 ```kotlin
 init {
     engine.events.onEach { event ->
         if (event is TimerEvent.PhaseCompleted) {
-            // Auto-brighten on session completion: if enabled and dimming is active, deactivate it
-            if (settingsManager.autoBrightenOnFinish.value && settingsManager.isDimmingActive.value) {
+            // Two-way auto toggle: when timer finishes, light up screen if auto toggle is on
+            if (settingsManager.autoBrightenOnFinish.value) {
                 settingsManager.setDimmingActive(false)
             }
         }
     }.launchIn(viewModelScope)
 }
+
+fun start() {
+    // Two-way auto toggle: when starting any session from IDLE, automatically dim screen
+    if (settingsManager.autoBrightenOnFinish.value && engine.state.value.status == TimerStatus.IDLE) {
+        settingsManager.setDimmingActive(true)
+    }
+    engine.startTicker(viewModelScope)
+}
 ```
+
+In `TimerForegroundService.kt`:
+```kotlin
+ACTION_START_SERVICE -> {
+    if (OledoroApp.settingsManager.autoBrightenOnFinish.value && engine.state.value.status == TimerStatus.IDLE) {
+        OledoroApp.settingsManager.setDimmingActive(true)
+    }
+    engine.startTicker(serviceScope)
+    startForegroundWithNotification(engine.state.value)
+}
+NotificationHelper.ACTION_NOTIFICATION_NEXT_PHASE -> {
+    if (OledoroApp.settingsManager.autoBrightenOnFinish.value) {
+        OledoroApp.settingsManager.setDimmingActive(true)
+    }
+    engine.nextPhase(autoStart = true)
+    notificationManager.cancel(NotificationHelper.NOTIFICATION_ID_ALERT)
+}
+```
+
+Crucially, manual lightbulb toggles during an ongoing session are completely respected. Because dimming is only activated when starting from `TimerStatus.IDLE`, normal clock ticks (`tick()`) and pause/resumptions never re-dim the screen if the user chose to turn the light on mid-session.
 
 ### 9.3 Luminance Restoration & Zero-Flicker AmbientModeEffect
 In `AmbientController.kt`:
@@ -675,4 +703,100 @@ Box(
 }
 ```
 - The main ambient screen remains pure black and distraction-free, with the centered timer staying strictly focused.
+
+---
+
+## 12. Customizable Element Colors & Zero-Flicker Layout
+
+### 12.1 Independent Element Colors
+In `AmbientScreen.kt`, digits and indicators are dynamically styled based on timer phase and overtime status:
+```kotlin
+val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
+val isBreak = state.phase == TimerPhase.SHORT_BREAK || state.phase == TimerPhase.LONG_BREAK
+val primaryColor = when {
+    isOvertime -> negativeColor.color
+    isBreak -> breakColor.color
+    else -> themeColor.color
+}
+val secondaryColor = when {
+    isOvertime -> negativeColor.color.copy(alpha = 0.8f)
+    isBreak -> breakColor.color.copy(alpha = 0.8f)
+    else -> AmbientCoolGray
+}
+```
+
+### 12.2 Reusable Zero-Flicker ColorPickerSection
+In `SettingsDialog.kt`, three non-exclusive color picker rows allow independent selection of Main Accent, Break Timer, and Negative Timer colors across all 7 Gruvbox hues:
+```kotlin
+@Composable
+private fun ColorPickerSection(
+    title: String,
+    selectedColor: GruvboxColor,
+    onColorSelected: (GruvboxColor) -> Unit,
+    context: Context
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            fontFamily = JetBrainsMono,
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            color = AmbientCoolGray,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = selectedColor.displayName.uppercase(),
+            fontFamily = JetBrainsMono,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = selectedColor.color
+        )
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        GruvboxColor.entries.forEach { gruvboxColor ->
+            val isSelected = gruvboxColor == selectedColor
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(gruvboxColor.color)
+                    .clickable {
+                        HapticHelper.performClick(context)
+                        onColorSelected(gruvboxColor)
+                    }
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(2.dp, Color.White, CircleShape)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "${gruvboxColor.displayName} Selected",
+                        tint = OledBlack,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+```
+Fixed swatch dimensions (`36.dp`) and stable Row containers ensure zero layout shifts, dialog jumping, or scroll position disruption when selecting colors.
+
 

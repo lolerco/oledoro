@@ -24,13 +24,14 @@ A hyper-minimalist, battery-focused Pomodoro timer for Android designed specific
   * During Long Break -> `"NEXT: {focusMinutes} MIN FOCUS"` (e.g., `"NEXT: 25 MIN FOCUS"`)
 * Persists accurately during countdown, paused state, and overtime.
 
-### 2.3 Auto-Brighten on Session Completion & Toggle Setting
-* When any session (Focus or Break) reaches zero (`00:00`):
-  * Emits `TimerEvent.PhaseCompleted(phase)`.
-  * If the **Auto-Brighten on Finish** setting is enabled (`autoBrightenOnFinish == true`) and screen dimmer was active (`isDimmingActive == true`), the app automatically deactivates dimming (`isDimmingActive = false`).
-  * Screen immediately brightens to system default brightness to visually grab the user's attention without requiring jarring acoustic alarms.
-  * The user's configured `dimPercentage` in Settings is strictly preserved so subsequent sessions can be dimmed again with a single tap.
-* **Customizable Setting:** Includes a dedicated toggle in Settings (`"AUTO-BRIGHTEN ON FINISH"` with subtitle `"Turn light bulb on when session ends"`). Users can disable this toggle if they prefer silent, uninterrupted dimming across session boundaries.
+### 2.3 Two-Way Auto Lightbulb & Session Auto-Dimming
+* **Two-Way Auto Toggle:**
+  * When **Auto Lightbulb** setting is enabled (`autoBrightenOnFinish == true`):
+    * **Auto-Dim on Start:** Starting any session (Focus or Break) from `IDLE` automatically activates screen dimming (`isDimmingActive = true`), keeping the display dark and battery-efficient during work and rest.
+    * **Auto-Brighten on Finish:** When any session timer completes (`00:00`), the screen automatically deactivates dimming (`isDimmingActive = false`), returning to normal brightness to visually alert the user.
+    * **Manual Override & Session Idempotence:** If the user manually toggles the lightbulb on during an active session, the screen remains bright. Subsequent timer ticks and pause/resume cycles **NEVER** re-dim or alter the state unexpectedly.
+  * When disabled (`autoBrightenOnFinish == false`): Starting sessions does not auto-dim, and timer completion does not auto-brighten.
+* **Lowercase Subtitle:** In the Settings dialog, the toggle is titled `"AUTO LIGHTBULB"` with its descriptive subtitle strictly formatted in lowercase letters: `"dim when session starts, light up when finished"`.
 
 ---
 
@@ -52,12 +53,17 @@ A hyper-minimalist, battery-focused Pomodoro timer for Android designed specific
 
 ### 3.3 Full Tactile Haptic Feedback
 * Crisp, distinct haptic feedback powered by `HapticHelper`:
-  * **Crisp Click (`performClick`):** Triggered on primary action buttons (Play/Pause, Skip, Reset), top action bar buttons (Lightbulb dimmer toggle, Settings gear toggle), Settings dialog close button, Auto-Brighten switch toggle, and Gruvbox color swatch selections.
+  * **Crisp Click (`performClick`):** Triggered on primary action buttons (Play/Pause, Skip, Reset), top action bar buttons (Lightbulb dimmer toggle, Settings gear toggle), Settings dialog close button, Auto Lightbulb switch toggle, and Gruvbox color swatch selections.
   * **Micro-Tick (`performTick`):** Triggered on each discrete integer step change of the Dim Level Slider (1%..50%), Focus Time Slider (1..90m), Short Break Slider (1..30m), Long Break Slider (1..60m), and Long Break Interval Slider (1..10 rounds).
   * **Hardware Safety:** Automatically queries `VibratorManager` on Android 12+ (API 31+), `Vibrator` on API 26–30, and legacy vibrator service on pre-Oreo, gracefully no-oping without crashing on vibrator-less hardware.
 
-### 3.4 Precision Sliders, Zero Flicker & Clean Credits
-* **Gruvbox Palette Options:** Yellow (`#FABD2F`), Orange (`#FE8019`), Green (`#B8BB26`), Aqua (`#8EC07C`), Blue (`#83A598`), Red (`#FB4934`), Cream (`#EBDBB2`).
+### 3.4 Customizable Element Colors (Non-Exclusive Gruvbox Palette)
+* **Independent Element Color Selection:**
+  * **Main Accent Color:** Used across main UI elements, focus digits, and active sliders (default: Yellow `#FABD2F`).
+  * **Break Timer Color:** Applied specifically to break countdowns (short break and long break) and break indicators (default: Aqua `#8EC07C`).
+  * **Negative / Overtime Color:** Applied specifically to negative countdowns and overtime warnings (default: Red `#FB4934`).
+  * **Non-Exclusive:** Each element can independently select any of the 7 Gruvbox colors (`YELLOW`, `ORANGE`, `GREEN`, `AQUA`, `BLUE`, `RED`, `CREAM`), allowing identical or contrasting palette combinations.
+  * **Zero Flicker Selection:** Dedicated `ColorPickerSection` composables with fixed sizing and haptic feedback ensure immediate updates without UI flickering, layout jumping, or scroll position disruption.
 * **Precision Slider Scaling (100% Number Coverage):**
   * All sliders use mathematically sound step counts and `roundToInt()` quantization, ensuring every single integer value is reachable without precision skips (e.g. eliminating the bug where Long Break skipped 15 and jumped from 14 to 16 due to float truncation).
   * Validated by unit tests across all 5 scales: Focus (1..90 min), Short Break (1..30 min), Long Break (1..60 min), Interval (1..10 rounds), and Dim Level (1%..50%).

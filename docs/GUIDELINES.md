@@ -29,7 +29,15 @@
   * Base ambient mode configuration (immersive mode, wake lock, show-when-locked) must be strictly decoupled from brightness adjustments. Never teardown immersive mode or trigger window insets relayouts during continuous slider interaction.
 * **Immediate Idle Synchronization:** Changing any duration or interval while the timer is in `IDLE` state must immediately update the on-screen digits and preview labels without requiring an app reload or manual reset.
 * **Running State Preservation:** Changing durations while the timer is running or in overtime must update future target durations and phase previews without wiping active elapsed time or restarting current ticks.
-* **Clear User Intent for Auto-Brighten:** The auto-brighten switch must provide clear explanatory copy (`"Turn light bulb on when session ends"`). When disabled, the timer must cross zero and enter overtime silently while maintaining dim display mode.
+* **Two-Way Auto Lightbulb Directives:**
+  * **Auto-Dim on Start:** When `autoBrightenOnFinish` is enabled, starting any session (Focus or Break) from `TimerStatus.IDLE` must automatically activate screen dimming (`isDimmingActive = true`).
+  * **Auto-Brighten on Finish:** When any session timer reaches `00:00`, screen dimming must be automatically deactivated (`isDimmingActive = false`) so the screen lights up to alert the user.
+  * **Mid-Session Manual Override Preservation:** If the user turns the light on during an active session (or while paused), subsequent ticks (`tick()`) and pause/resume cycles must **NEVER** re-dim or break the screen state. Screen remains bright.
+  * **Lowercase Subtitle Enforcement:** The text under the Auto Lightbulb toggle setting must strictly use lowercase letters only: `"dim when session starts, light up when finished"`.
+* **Customizable Element Colors Directives:**
+  * Support independent selection of Main Accent Color (`themeColor`), Break Timer Color (`breakColor`), and Negative Timer Color (`negativeColor`).
+  * Non-exclusive: each element can select any of the 7 Gruvbox colors independently.
+  * Reusable `ColorPickerSection` must have fixed sizing (`36.dp` circles) and fixed row heights to guarantee zero UI flicker or scroll jumping.
 * **Clean Attribution & Placement:**
   * Main ambient screen is kept clean and minimalist without intrusive footer text.
   * Settings credits structured as:
@@ -51,7 +59,7 @@
 ### 2.4 Tactile Interaction Standards
 * Every interactive component must provide immediate feedback:
   * Primary actions (Play/Pause, Skip, Reset): `HapticHelper.performClick(context)`.
-  * Dialog controls (Close button, Color swatches, Auto-Brighten switch): `HapticHelper.performClick(context)`.
+  * Dialog controls (Close button, Color swatches, Auto Lightbulb switch): `HapticHelper.performClick(context)`.
   * Fine slider adjustments: `HapticHelper.performTick(context)` on integer value increments.
 
 ### 2.5 Gruvbox Aesthetics & Adaptive Icon Design

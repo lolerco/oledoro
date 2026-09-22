@@ -13,6 +13,7 @@ import com.jakob.oledoro.OledoroApp
 import com.jakob.oledoro.domain.TimerEngine
 import com.jakob.oledoro.domain.TimerEvent
 import com.jakob.oledoro.domain.TimerState
+import com.jakob.oledoro.domain.TimerStatus
 import com.jakob.oledoro.ui.TimerEngineHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +54,9 @@ class TimerForegroundService : Service() {
 
         when (action) {
             ACTION_START_SERVICE -> {
+                if (OledoroApp.settingsManager.autoBrightenOnFinish.value && engine.state.value.status == TimerStatus.IDLE) {
+                    OledoroApp.settingsManager.setDimmingActive(true)
+                }
                 engine.startTicker(serviceScope)
                 startForegroundWithNotification(engine.state.value)
             }
@@ -71,6 +75,9 @@ class TimerForegroundService : Service() {
                 engine.startTicker(serviceScope)
             }
             NotificationHelper.ACTION_NOTIFICATION_NEXT_PHASE -> {
+                if (OledoroApp.settingsManager.autoBrightenOnFinish.value) {
+                    OledoroApp.settingsManager.setDimmingActive(true)
+                }
                 engine.nextPhase(autoStart = true)
                 notificationManager.cancel(NotificationHelper.NOTIFICATION_ID_ALERT)
             }
@@ -132,7 +139,7 @@ class TimerForegroundService : Service() {
         eventObservationJob = engine.events.onEach { event ->
             when (event) {
                 is TimerEvent.PhaseCompleted -> {
-                    if (OledoroApp.settingsManager.autoBrightenOnFinish.value && OledoroApp.settingsManager.isDimmingActive.value) {
+                    if (OledoroApp.settingsManager.autoBrightenOnFinish.value) {
                         OledoroApp.settingsManager.setDimmingActive(false)
                     }
                     val alertNotification = notificationHelper.buildCompletionNotification(event.phase)
