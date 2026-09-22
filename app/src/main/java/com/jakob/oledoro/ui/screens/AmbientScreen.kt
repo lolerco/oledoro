@@ -106,15 +106,10 @@ fun AmbientScreen(
 
     val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
     val isBreak = state.phase == TimerPhase.SHORT_BREAK || state.phase == TimerPhase.LONG_BREAK
-    val primaryColor = when {
+    val clockColor = when {
         isOvertime -> negativeColor.color
         isBreak -> breakColor.color
         else -> themeColor.color
-    }
-    val secondaryColor = when {
-        isOvertime -> negativeColor.color.copy(alpha = 0.8f)
-        isBreak -> breakColor.color.copy(alpha = 0.8f)
-        else -> AmbientCoolGray
     }
 
     val context = LocalContext.current
@@ -196,7 +191,7 @@ fun AmbientScreen(
 
             Text(
                 text = phaseText,
-                color = secondaryColor,
+                color = AmbientCoolGray,
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
@@ -209,7 +204,7 @@ fun AmbientScreen(
             TimerDisplay(
                 remainingMs = state.remainingMs,
                 isOvertime = isOvertime,
-                color = primaryColor
+                color = clockColor
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -217,7 +212,7 @@ fun AmbientScreen(
             // Next Phase Preview (e.g. "NEXT: 5 MIN BREAK")
             NextPhasePreview(
                 previewText = state.nextPhasePreview,
-                color = secondaryColor
+                color = AmbientCoolGray
             )
         }
 
@@ -240,7 +235,7 @@ fun AmbientScreen(
                     onPause = onPause,
                     onSkip = onSkip,
                     onReset = onReset,
-                    tint = secondaryColor
+                    tint = AmbientCoolGray
                 )
             }
         }

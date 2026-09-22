@@ -14,9 +14,9 @@
 │  │  - Anti-Burn-In Pixel Shift (±4dp)       │   │  - Short Break Slider (1..30m)    │  │
 │  │  - Dynamic NextPhasePreview Display      │   │  - Long Break Slider (1..60m)     │  │
 │  │  - Overtime Display (-MM:SS)             │   │  - Break Interval Slider (1..10r) │  │
-│  │  - Independent Element Color Tinting     │   │  - Auto Lightbulb Toggle Switch   │  │
-│  │  - Tactile Haptics (Click & Micro-Tick)  │   │  - Dim Level Slider (1..50%)      │  │
-│  │                                          │   │  - Creator Credits (lolerco)      │  │
+│  │  - Isolated Clock-Only Digit Color Switching│   │  - Auto Lightbulb Toggle Switch   │  │
+│  │  - Neutral Text Labels & Icons (AmbientCool)│   │  - Dim Level Slider (1..50%)      │  │
+│  │  - Tactile Haptics (Click & Micro-Tick)  │   │  - Creator Credits (lolerco)      │  │
 │  └────────────────────┬─────────────────────┘   └─────────────────┬─────────────────┘  │
 │                       │                                           │                    │
 │                       ▼                                           ▼                    │
@@ -26,6 +26,7 @@
 │  │  - Coordinates Settings Persistence via AppSettingsManager                       │  │
 │  │  - Propagates Duration & Interval Updates to TimerEngine (syncEngineDurations)   │  │
 │  │  - Two-Way Auto Toggle: Auto-dims on IDLE start; auto-brightens on completion    │  │
+│  │  - Skip Auto-Brighten: Deactivates dimming on skip, decoupled from toggle        │  │
 │  │  - Preserves Manual Brightness Toggle during running sessions (idempotent ticks) │  │
 │  └────────────────────┬───────────────────────────────────────────┬─────────────────┘  │
 └───────────────────────┼───────────────────────────────────────────┼────────────────────┘

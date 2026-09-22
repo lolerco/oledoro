@@ -93,6 +93,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun skip() {
+        settingsManager.setDimmingActive(false)
         engine.nextPhase(autoStart = false)
     }
 

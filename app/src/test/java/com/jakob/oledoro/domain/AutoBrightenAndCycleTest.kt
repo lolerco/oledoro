@@ -635,4 +635,64 @@ class AutoBrightenAndCycleTest {
         negativeColor = GruvboxColor.BLUE
         assertEquals(GruvboxColor.BLUE, negativeColor)
     }
+
+    @Test
+    fun `skipping current session automatically deactivates dimming and lights up screen decoupled from auto light bulb`() {
+        val engine = TimerEngine()
+
+        // Case A: autoLightbulb is disabled, screen is dimmed
+        var isDimmingActive = true
+        val autoLightbulbDisabled = false
+
+        // User skips current session: dimming deactivates regardless of autoLightbulb setting
+        isDimmingActive = false
+        engine.nextPhase(autoStart = false)
+
+        assertFalse("Screen must light up when session is skipped even if auto lightbulb is off", isDimmingActive)
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+
+        // Case B: autoLightbulb is enabled, screen is dimmed
+        isDimmingActive = true
+        val autoLightbulbEnabled = true
+
+        // User skips short break: dimming deactivates
+        isDimmingActive = false
+        engine.nextPhase(autoStart = false)
+
+        assertFalse("Screen must light up when session is skipped when auto lightbulb is on", isDimmingActive)
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+    }
+
+    @Test
+    fun `only clock digits switch color in break and overtime while text and controls remain neutral`() {
+        val themeColor = GruvboxColor.YELLOW
+        val breakColor = GruvboxColor.AQUA
+        val negativeColor = GruvboxColor.RED
+        val neutralColor = "AmbientCoolGray"
+
+        fun resolveClockColor(isOvertime: Boolean, isBreak: Boolean): GruvboxColor {
+            return when {
+                isOvertime -> negativeColor
+                isBreak -> breakColor
+                else -> themeColor
+            }
+        }
+
+        fun resolveTextAndControlsColor(): String = neutralColor
+
+        // 1. Focus session (normal)
+        assertEquals(themeColor, resolveClockColor(isOvertime = false, isBreak = false))
+        assertEquals("AmbientCoolGray", resolveTextAndControlsColor())
+
+        // 2. Break session
+        assertEquals(breakColor, resolveClockColor(isOvertime = false, isBreak = true))
+        assertEquals("AmbientCoolGray", resolveTextAndControlsColor())
+
+        // 3. Overtime session
+        assertEquals(negativeColor, resolveClockColor(isOvertime = true, isBreak = false))
+        assertEquals(negativeColor, resolveClockColor(isOvertime = true, isBreak = true))
+        assertEquals("AmbientCoolGray", resolveTextAndControlsColor())
+    }
 }

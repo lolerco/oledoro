@@ -33,9 +33,11 @@
   * **Auto-Dim on Start:** When `autoBrightenOnFinish` is enabled, starting any session (Focus or Break) from `TimerStatus.IDLE` must automatically activate screen dimming (`isDimmingActive = true`).
   * **Auto-Brighten on Finish:** When any session timer reaches `00:00`, screen dimming must be automatically deactivated (`isDimmingActive = false`) so the screen lights up to alert the user.
   * **Mid-Session Manual Override Preservation:** If the user turns the light on during an active session (or while paused), subsequent ticks (`tick()`) and pause/resume cycles must **NEVER** re-dim or break the screen state. Screen remains bright.
+  * **Skip Auto-Brighten (Decoupled):** Skipping the active session must always deactivate dimming (`isDimmingActive = false`) and light up the screen, regardless of whether the Auto Lightbulb toggle is on or off.
   * **Lowercase Subtitle Enforcement:** The text under the Auto Lightbulb toggle setting must strictly use lowercase letters only: `"dim when session starts, light up when finished"`.
 * **Customizable Element Colors Directives:**
   * Support independent selection of Main Accent Color (`themeColor`), Break Timer Color (`breakColor`), and Negative Timer Color (`negativeColor`).
+  * **Clock-Only Color Switching:** Only the countdown and overtime digits (`TimerDisplay`) should reflect the theme, break, or overtime colors. Surrounding text elements (phase label, next phase preview) and control icons (reset, play/pause, skip) must strictly remain in the default neutral color (`AmbientCoolGray`).
   * Non-exclusive: each element can select any of the 7 Gruvbox colors independently.
   * Reusable `ColorPickerSection` must have fixed sizing (`36.dp` circles) and fixed row heights to guarantee zero UI flicker or scroll jumping.
 * **Clean Attribution & Placement:**
@@ -48,6 +50,7 @@
     font: jetbrains nerd font mono
     palette: gruvbox
     created by: lolerco & gemini
+    version 1.1
     ```
 
 ### 2.3 Reversed Lightbulb Logic

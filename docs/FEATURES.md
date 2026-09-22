@@ -31,6 +31,7 @@ A hyper-minimalist, battery-focused Pomodoro timer for Android designed specific
     * **Auto-Brighten on Finish:** When any session timer completes (`00:00`), the screen automatically deactivates dimming (`isDimmingActive = false`), returning to normal brightness to visually alert the user.
     * **Manual Override & Session Idempotence:** If the user manually toggles the lightbulb on during an active session, the screen remains bright. Subsequent timer ticks and pause/resume cycles **NEVER** re-dim or alter the state unexpectedly.
   * When disabled (`autoBrightenOnFinish == false`): Starting sessions does not auto-dim, and timer completion does not auto-brighten.
+* **Skip Auto-Brighten (Decoupled):** Skipping the current session immediately deactivates dimming (`isDimmingActive = false`) and lights up the screen to standard brightness, completely decoupled from the Auto Lightbulb setting.
 * **Lowercase Subtitle:** In the Settings dialog, the toggle is titled `"AUTO LIGHTBULB"` with its descriptive subtitle strictly formatted in lowercase letters: `"dim when session starts, light up when finished"`.
 
 ---
@@ -60,8 +61,9 @@ A hyper-minimalist, battery-focused Pomodoro timer for Android designed specific
 ### 3.4 Customizable Element Colors (Non-Exclusive Gruvbox Palette)
 * **Independent Element Color Selection:**
   * **Main Accent Color:** Used across main UI elements, focus digits, and active sliders (default: Yellow `#FABD2F`).
-  * **Break Timer Color:** Applied specifically to break countdowns (short break and long break) and break indicators (default: Aqua `#8EC07C`).
+  * **Break Timer Color:** Applied specifically to break countdowns (short break and long break) (default: Aqua `#8EC07C`).
   * **Negative / Overtime Color:** Applied specifically to negative countdowns and overtime warnings (default: Red `#FB4934`).
+  * **Clock-Only Color Switching:** Only the large countdown/overtime digits (`TimerDisplay`) adopt the phase and overtime colors. Surrounding text elements (phase label, next phase preview) and action icons (reset, play/pause, skip) strictly remain in the normal font color (`AmbientCoolGray`), preserving a clean, distraction-free aesthetic.
   * **Non-Exclusive:** Each element can independently select any of the 7 Gruvbox colors (`YELLOW`, `ORANGE`, `GREEN`, `AQUA`, `BLUE`, `RED`, `CREAM`), allowing identical or contrasting palette combinations.
   * **Zero Flicker Selection:** Dedicated `ColorPickerSection` composables with fixed sizing and haptic feedback ensure immediate updates without UI flickering, layout jumping, or scroll position disruption.
 * **Precision Slider Scaling (100% Number Coverage):**
@@ -84,6 +86,7 @@ A hyper-minimalist, battery-focused Pomodoro timer for Android designed specific
     font: jetbrains nerd font mono
     palette: gruvbox
     created by: lolerco & gemini
+    version 1.1
     ```
 
 ### 3.5 Minimalist OLED / Gruvbox / Nerd App Logo

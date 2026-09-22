@@ -693,7 +693,7 @@ Box(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco & gemini",
+            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco & gemini\nversion 1.1",
             fontFamily = JetBrainsMono,
             fontSize = 11.sp,
             color = AmbientCoolGray,
@@ -708,20 +708,30 @@ Box(
 
 ## 12. Customizable Element Colors & Zero-Flicker Layout
 
-### 12.1 Independent Element Colors
-In `AmbientScreen.kt`, digits and indicators are dynamically styled based on timer phase and overtime status:
+### 12.1 Independent Element Colors & Isolated Clock Digit Switching
+In `AmbientScreen.kt`, only the large countdown/overtime clock digits switch colors according to the session state (theme accent, break color, negative color). All surrounding text labels (phase name, next phase preview) and action icons (reset, play/pause, skip) strictly retain the normal font color (`AmbientCoolGray`):
 ```kotlin
 val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
 val isBreak = state.phase == TimerPhase.SHORT_BREAK || state.phase == TimerPhase.LONG_BREAK
-val primaryColor = when {
+val clockColor = when {
     isOvertime -> negativeColor.color
     isBreak -> breakColor.color
     else -> themeColor.color
 }
-val secondaryColor = when {
-    isOvertime -> negativeColor.color.copy(alpha = 0.8f)
-    isBreak -> breakColor.color.copy(alpha = 0.8f)
-    else -> AmbientCoolGray
+
+// Text labels and controls use AmbientCoolGray directly:
+Text(text = phaseText, color = AmbientCoolGray, ...)
+TimerDisplay(remainingMs = state.remainingMs, isOvertime = isOvertime, color = clockColor)
+NextPhasePreview(previewText = state.nextPhasePreview, color = AmbientCoolGray)
+ControlsRow(..., tint = AmbientCoolGray)
+```
+
+### 12.2 Skip Auto-Brighten (Decoupled from Auto Lightbulb)
+In `MainActivity.kt`, skipping a session immediately deactivates dimming, lighting up the display to default brightness without checking `autoBrightenOnFinish`:
+```kotlin
+fun skip() {
+    settingsManager.setDimmingActive(false)
+    engine.nextPhase(autoStart = false)
 }
 ```
 
