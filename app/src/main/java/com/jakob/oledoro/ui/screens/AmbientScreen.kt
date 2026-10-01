@@ -277,6 +277,34 @@ fun AmbientScreen(
             }
         }
 
+        // Total time counters at bottom (vertically stacked)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .burnInShift(burnInOffset)
+                .padding(bottom = 40.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "total focus time: ${formatTime(state.totalFocusTimeMs)}",
+                    color = AmbientCoolGray,
+                    fontFamily = JetBrainsMono,
+                    fontSize = 11.sp,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = "total break time: ${formatTime(state.totalBreakTimeMs)}",
+                    color = AmbientCoolGray,
+                    fontFamily = JetBrainsMono,
+                    fontSize = 11.sp,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+
         // Settings Dialog Modal
         if (settingsDialogVisible) {
             SettingsDialog(
@@ -302,4 +330,11 @@ fun AmbientScreen(
             )
         }
     }
+}
+
+private fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%d:%02d", minutes, seconds)
 }
