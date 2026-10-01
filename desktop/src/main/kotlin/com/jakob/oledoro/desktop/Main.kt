@@ -135,13 +135,45 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                     selectedNegativeColor = settings.negativeColor,
                     onNegativeColorChange = { settings.updateNegativeColor(it) },
                     focusMinutes = settings.focusMinutes,
-                    onFocusMinutesChange = { settings.updateFocusMinutes(it) },
+                    onFocusMinutesChange = {
+                        settings.updateFocusMinutes(it)
+                        engine.updateDurations(
+                            focusMinutes = settings.focusMinutes,
+                            shortBreakMinutes = settings.shortBreakMinutes,
+                            longBreakMinutes = settings.longBreakMinutes,
+                            breakInterval = settings.longBreakInterval
+                        )
+                    },
                     shortBreakMinutes = settings.shortBreakMinutes,
-                    onShortBreakMinutesChange = { settings.updateShortBreakMinutes(it) },
+                    onShortBreakMinutesChange = {
+                        settings.updateShortBreakMinutes(it)
+                        engine.updateDurations(
+                            focusMinutes = settings.focusMinutes,
+                            shortBreakMinutes = settings.shortBreakMinutes,
+                            longBreakMinutes = settings.longBreakMinutes,
+                            breakInterval = settings.longBreakInterval
+                        )
+                    },
                     longBreakMinutes = settings.longBreakMinutes,
-                    onLongBreakMinutesChange = { settings.updateLongBreakMinutes(it) },
+                    onLongBreakMinutesChange = {
+                        settings.updateLongBreakMinutes(it)
+                        engine.updateDurations(
+                            focusMinutes = settings.focusMinutes,
+                            shortBreakMinutes = settings.shortBreakMinutes,
+                            longBreakMinutes = settings.longBreakMinutes,
+                            breakInterval = settings.longBreakInterval
+                        )
+                    },
                     longBreakInterval = settings.longBreakInterval,
-                    onLongBreakIntervalChange = { settings.updateLongBreakInterval(it) },
+                    onLongBreakIntervalChange = {
+                        settings.updateLongBreakInterval(it)
+                        engine.updateDurations(
+                            focusMinutes = settings.focusMinutes,
+                            shortBreakMinutes = settings.shortBreakMinutes,
+                            longBreakMinutes = settings.longBreakMinutes,
+                            breakInterval = settings.longBreakInterval
+                        )
+                    },
                     onDismiss = { settingsDialogVisible = false }
                 )
             }
