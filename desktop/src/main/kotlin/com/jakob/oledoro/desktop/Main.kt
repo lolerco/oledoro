@@ -1,12 +1,9 @@
 package com.jakob.oledoro.desktop
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -27,7 +24,6 @@ import com.jakob.oledoro.domain.*
 import com.jakob.oledoro.ui.components.*
 import com.jakob.oledoro.ui.theme.*
 import com.jakob.oledoro.ui.utils.HapticHelper
-import java.nio.file.Paths
 
 @Composable
 fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
@@ -41,7 +37,7 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                 .fillMaxSize()
                 .background(OledBlack)
         ) {
-            // Top Action Bar (Lightbulb removed for desktop, only Settings gear)
+            // Top Action Bar (Settings gear)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -49,7 +45,6 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Gear button: opens SettingsDialog
                 IconButton(
                     onClick = {
                         HapticHelper.performClick(null)
@@ -65,7 +60,7 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                 }
             }
 
-            // Centered timer display (mirrors AmbientScreen, no ambient/dimming)
+            // Centered timer display
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -111,29 +106,23 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                 )
             }
 
-            // Controls row at bottom center
-            var controlsVisible by remember { mutableStateOf(false) }
+            // Controls row - always visible, positioned below timer
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { controlsVisible = !controlsVisible },
-                contentAlignment = Alignment.Center
+                    .align(Alignment.Center)
+                    .offset(y = 150.dp)
             ) {
-                if (controlsVisible) {
-                    Box(modifier = Modifier.align(Alignment.Center).offset(y = 120.dp)) {
-                        ControlsRow(
-                            status = timerState.status,
-                            onStart = { engine.startTicker(coroutineScope) },
-                            onPause = { engine.pause() },
-                            onSkip = {
-                                settings.setDimmingActive(false)
-                                engine.nextPhase(autoStart = false)
-                            },
-                            onReset = { engine.reset() },
-                            tint = AmbientCoolGray
-                        )
-                    }
-                }
+                ControlsRow(
+                    status = timerState.status,
+                    onStart = { engine.startTicker(coroutineScope) },
+                    onPause = { engine.pause() },
+                    onSkip = {
+                        settings.setDimmingActive(false)
+                        engine.nextPhase(autoStart = false)
+                    },
+                    onReset = { engine.reset() },
+                    tint = AmbientCoolGray
+                )
             }
 
             // Settings Dialog Modal
