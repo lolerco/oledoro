@@ -32,36 +32,39 @@ enum class GruvboxColor(val displayName: String, val hex: String) {
 
 class AppSettingsManager(private val settingsFile: Path = Paths.get(System.getProperty("user.home"), ".oledoro", "desktop.properties")) {
     private val props = Properties()
-
-    // Observable state for Compose recomposition
-    var themeColor: GruvboxColor by mutableStateOf(parseColor(props.getProperty("themeColor", GruvboxColor.YELLOW.name)))
-        private set
-    var breakColor: GruvboxColor by mutableStateOf(parseColor(props.getProperty("breakColor", GruvboxColor.AQUA.name)))
-        private set
-    var negativeColor: GruvboxColor by mutableStateOf(parseColor(props.getProperty("negativeColor", GruvboxColor.RED.name)))
-        private set
-    var focusMinutes: Int by mutableStateOf(props.getProperty("focusMinutes", "25").toInt().coerceIn(1, 90))
-        private set
-    var shortBreakMinutes: Int by mutableStateOf(props.getProperty("shortBreakMinutes", "5").toInt().coerceIn(1, 30))
-        private set
-    var longBreakMinutes: Int by mutableStateOf(props.getProperty("longBreakMinutes", "15").toInt().coerceIn(1, 60))
-        private set
-    var longBreakInterval: Int by mutableStateOf(props.getProperty("longBreakInterval", "4").toInt().coerceIn(1, 10))
-        private set
-    var autoBrightenOnFinish: Boolean by mutableStateOf(props.getProperty("autoBrightenOnFinish", "true").toBoolean())
-        private set
-    var isDimmingActive: Boolean by mutableStateOf(props.getProperty("isDimmingActive", "false").toBoolean())
-        private set
-    var dimPercentage: Int by mutableStateOf(props.getProperty("dimPercentage", "5").toInt().coerceIn(1, 50))
-        private set
-
-    init {
-        try {
+    
+    // Load settings from file first
+    private val loadedProps: Properties
+        get() {
             if (Files.exists(settingsFile) && Files.size(settingsFile) > 0) {
-                Files.newInputStream(settingsFile).use { props.load(it) }
+                try {
+                    Files.newInputStream(settingsFile).use { props.load(it) }
+                } catch (_: Exception) {}
             }
-        } catch (_: Exception) {}
-    }
+            return props
+        }
+
+    // Observable state for Compose recomposition - initialized after file load
+    var themeColor: GruvboxColor by mutableStateOf(parseColor(loadedProps.getProperty("themeColor", GruvboxColor.YELLOW.name)))
+        private set
+    var breakColor: GruvboxColor by mutableStateOf(parseColor(loadedProps.getProperty("breakColor", GruvboxColor.AQUA.name)))
+        private set
+    var negativeColor: GruvboxColor by mutableStateOf(parseColor(loadedProps.getProperty("negativeColor", GruvboxColor.RED.name)))
+        private set
+    var focusMinutes: Int by mutableStateOf(loadedProps.getProperty("focusMinutes", "25").toInt().coerceIn(1, 90))
+        private set
+    var shortBreakMinutes: Int by mutableStateOf(loadedProps.getProperty("shortBreakMinutes", "5").toInt().coerceIn(1, 30))
+        private set
+    var longBreakMinutes: Int by mutableStateOf(loadedProps.getProperty("longBreakMinutes", "15").toInt().coerceIn(1, 60))
+        private set
+    var longBreakInterval: Int by mutableStateOf(loadedProps.getProperty("longBreakInterval", "4").toInt().coerceIn(1, 10))
+        private set
+    var autoBrightenOnFinish: Boolean by mutableStateOf(loadedProps.getProperty("autoBrightenOnFinish", "true").toBoolean())
+        private set
+    var isDimmingActive: Boolean by mutableStateOf(loadedProps.getProperty("isDimmingActive", "false").toBoolean())
+        private set
+    var dimPercentage: Int by mutableStateOf(loadedProps.getProperty("dimPercentage", "5").toInt().coerceIn(1, 50))
+        private set
 
     fun updateThemeColor(color: GruvboxColor) {
         props.setProperty("themeColor", color.name)

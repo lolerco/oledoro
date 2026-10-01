@@ -96,4 +96,34 @@ class TimerStateTest {
         )
         assertEquals("NEXT: 25 MIN FOCUS", state.nextPhasePreview)
     }
+
+    @Test
+    fun `totalFocusTimeMs and totalBreakTimeMs default to zero`() {
+        val state = TimerState()
+        assertEquals(0L, state.totalFocusTimeMs)
+        assertEquals(0L, state.totalBreakTimeMs)
+    }
+
+    @Test
+    fun `totalFocusTimeMs and totalBreakTimeMs can be set in constructor`() {
+        val state = TimerState(totalFocusTimeMs = 3600000L, totalBreakTimeMs = 600000L)
+        assertEquals(3600000L, state.totalFocusTimeMs)
+        assertEquals(600000L, state.totalBreakTimeMs)
+    }
+
+    @Test
+    fun `copy preserves totalFocusTimeMs and totalBreakTimeMs`() {
+        val state = TimerState(totalFocusTimeMs = 5000L, totalBreakTimeMs = 3000L)
+        val copied = state.copy(phase = TimerPhase.SHORT_BREAK)
+        assertEquals(5000L, copied.totalFocusTimeMs)
+        assertEquals(3000L, copied.totalBreakTimeMs)
+    }
+
+    @Test
+    fun `copy can override totalFocusTimeMs and totalBreakTimeMs`() {
+        val state = TimerState(totalFocusTimeMs = 5000L, totalBreakTimeMs = 3000L)
+        val copied = state.copy(totalFocusTimeMs = 10000L, totalBreakTimeMs = 6000L)
+        assertEquals(10000L, copied.totalFocusTimeMs)
+        assertEquals(6000L, copied.totalBreakTimeMs)
+    }
 }
