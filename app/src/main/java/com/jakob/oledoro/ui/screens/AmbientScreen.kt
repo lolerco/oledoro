@@ -290,14 +290,14 @@ fun AmbientScreen(
             ) {
                 Text(
                     text = "total focus time: ${formatTime(state.totalFocusTimeMs)}",
-                    color = Color.White,
+                    color = AmbientCoolGray,
                     fontFamily = JetBrainsMono,
                     fontSize = 11.sp,
                     letterSpacing = 1.sp
                 )
                 Text(
                     text = "total break time: ${formatTime(state.totalBreakTimeMs)}",
-                    color = Color.White,
+                    color = AmbientCoolGray,
                     fontFamily = JetBrainsMono,
                     fontSize = 11.sp,
                     letterSpacing = 1.sp
