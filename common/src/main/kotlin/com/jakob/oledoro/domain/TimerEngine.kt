@@ -38,13 +38,25 @@ class TimerEngine(
             completedFocusCount = 0,
             focusDurationMs = focusDurationMs,
             shortBreakDurationMs = shortBreakDurationMs,
-            longBreakDurationMs = longBreakDurationMs
+            longBreakDurationMs = longBreakDurationMs,
+            totalFocusTimeMs = 0L,
+            totalBreakTimeMs = 0L
         )
     )
     val state: StateFlow<TimerState> = _state.asStateFlow()
 
     private val _events = MutableSharedFlow<TimerEvent>(replay = 0, extraBufferCapacity = 64)
     val events: SharedFlow<TimerEvent> = _events.asSharedFlow()
+
+    // Accumulated time tracking (not persisted, session-only)
+    private var _totalFocusTimeMs: Long = 0L
+    private var _totalBreakTimeMs: Long = 0L
+    var totalFocusTimeMs: Long = 0L
+        get() = _totalFocusTimeMs
+        private set
+    var totalBreakTimeMs: Long = 0L
+        get() = _totalBreakTimeMs
+        private set
 
     private var completedFocusCount: Int = initialState?.completedFocusCount ?: 0
 
@@ -96,6 +108,8 @@ class TimerEngine(
     @Synchronized
     fun resetAll() {
         completedFocusCount = 0
+        _totalFocusTimeMs = 0L
+        _totalBreakTimeMs = 0L
         _state.value = TimerState(
             phase = TimerPhase.FOCUS,
             status = TimerStatus.IDLE,
@@ -106,7 +120,9 @@ class TimerEngine(
             completedFocusCount = 0,
             focusDurationMs = focusDurationMs,
             shortBreakDurationMs = shortBreakDurationMs,
-            longBreakDurationMs = longBreakDurationMs
+            longBreakDurationMs = longBreakDurationMs,
+            totalFocusTimeMs = 0L,
+            totalBreakTimeMs = 0L
         )
     }
 
@@ -135,7 +151,9 @@ class TimerEngine(
                     totalRounds = totalRounds,
                     focusDurationMs = focusDurationMs,
                     shortBreakDurationMs = shortBreakDurationMs,
-                    longBreakDurationMs = longBreakDurationMs
+                    longBreakDurationMs = longBreakDurationMs,
+                    totalFocusTimeMs = _totalFocusTimeMs,
+                    totalBreakTimeMs = _totalBreakTimeMs
                 )
             }
             TimerPhase.SHORT_BREAK -> {
@@ -150,7 +168,9 @@ class TimerEngine(
                     totalRounds = totalRounds,
                     focusDurationMs = focusDurationMs,
                     shortBreakDurationMs = shortBreakDurationMs,
-                    longBreakDurationMs = longBreakDurationMs
+                    longBreakDurationMs = longBreakDurationMs,
+                    totalFocusTimeMs = _totalFocusTimeMs,
+                    totalBreakTimeMs = _totalBreakTimeMs
                 )
             }
             TimerPhase.LONG_BREAK -> {
@@ -165,7 +185,9 @@ class TimerEngine(
                     totalRounds = totalRounds,
                     focusDurationMs = focusDurationMs,
                     shortBreakDurationMs = shortBreakDurationMs,
-                    longBreakDurationMs = longBreakDurationMs
+                    longBreakDurationMs = longBreakDurationMs,
+                    totalFocusTimeMs = _totalFocusTimeMs,
+                    totalBreakTimeMs = _totalBreakTimeMs
                 )
             }
         }
@@ -203,7 +225,9 @@ class TimerEngine(
             totalRounds = this.totalRounds,
             focusDurationMs = this.focusDurationMs,
             shortBreakDurationMs = this.shortBreakDurationMs,
-            longBreakDurationMs = this.longBreakDurationMs
+            longBreakDurationMs = this.longBreakDurationMs,
+            totalFocusTimeMs = _totalFocusTimeMs,
+            totalBreakTimeMs = _totalBreakTimeMs
         )
     }
 
@@ -220,9 +244,17 @@ class TimerEngine(
         val reachedZeroOrOvertime = wasPositive && (newRemainingMs <= 0L)
         val newStatus = if (newRemainingMs <= 0L) TimerStatus.OVERTIME else TimerStatus.RUNNING
 
+        // Accumulate time for the current phase
+        when (current.phase) {
+            TimerPhase.FOCUS -> _totalFocusTimeMs += deltaMs
+            TimerPhase.SHORT_BREAK, TimerPhase.LONG_BREAK -> _totalBreakTimeMs += deltaMs
+        }
+
         _state.value = current.copy(
             remainingMs = newRemainingMs,
-            status = newStatus
+            status = newStatus,
+            totalFocusTimeMs = _totalFocusTimeMs,
+            totalBreakTimeMs = _totalBreakTimeMs
         )
 
         if (reachedZeroOrOvertime) {

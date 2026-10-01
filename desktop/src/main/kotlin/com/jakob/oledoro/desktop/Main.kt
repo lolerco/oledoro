@@ -24,6 +24,7 @@ import com.jakob.oledoro.domain.*
 import com.jakob.oledoro.ui.components.*
 import com.jakob.oledoro.ui.theme.*
 import com.jakob.oledoro.ui.utils.HapticHelper
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
@@ -125,6 +126,26 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                 )
             }
 
+            // Total time counters at bottom
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 40.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "total focus time: ${formatTime(engine.totalFocusTimeMs)} · total break time: ${formatTime(engine.totalBreakTimeMs)}",
+                        color = AmbientCoolGray,
+                        fontFamily = JetBrainsMono,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+
             // Settings Dialog Modal
             if (settingsDialogVisible) {
                 DesktopSettingsDialog(
@@ -191,4 +212,11 @@ fun main() = application {
     ) {
         DesktopApp(engine, settings)
     }
+}
+
+private fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%d:%02d", minutes, seconds)
 }

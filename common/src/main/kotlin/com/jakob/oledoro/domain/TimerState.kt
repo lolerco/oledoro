@@ -10,7 +10,9 @@ data class TimerState(
     val completedFocusCount: Int = 0,
     val focusDurationMs: Long = 25 * 60 * 1000L,
     val shortBreakDurationMs: Long = 5 * 60 * 1000L,
-    val longBreakDurationMs: Long = 15 * 60 * 1000L
+    val longBreakDurationMs: Long = 15 * 60 * 1000L,
+    val totalFocusTimeMs: Long = 0L,
+    val totalBreakTimeMs: Long = 0L
 ) {
     val isOvertime: Boolean
         get() = remainingMs < 0 || status == TimerStatus.OVERTIME
