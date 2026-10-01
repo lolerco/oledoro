@@ -92,8 +92,11 @@ object DesktopNotificationManager {
     private fun sendLinuxNotification(title: String, message: String, iconName: String) {
         try {
             // notify-send supports --icon with icon name or path
-            // Try to use a named icon first, fallback to no icon
-            val iconArgs = if (iconExists(iconName)) {
+            // Try to use the app icon from resources or system icon theme
+            val iconPath = findIconPath()
+            val iconArgs = if (iconPath != null) {
+                listOf("--icon", iconPath)
+            } else if (iconExists(iconName)) {
                 listOf("--icon", iconName)
             } else {
                 emptyList()
@@ -105,6 +108,38 @@ object DesktopNotificationManager {
         } catch (e: Exception) {
             println("[$title] $message (notify-send failed: ${e.message})")
         }
+    }
+
+    private fun findIconPath(): String? {
+        // Try system icon theme first (installed via package manager or user)
+        // Use PNG for better scaling with notify-send
+        val userIconPng = "${System.getProperty("user.home")}/.local/share/icons/hicolor/48x48/apps/oledoro.png"
+        if (File(userIconPng).exists()) return userIconPng
+        
+        val systemIconPng = "/usr/share/icons/hicolor/48x48/apps/oledoro.png"
+        if (File(systemIconPng).exists()) return systemIconPng
+        
+        val userIconSvg = "${System.getProperty("user.home")}/.local/share/icons/hicolor/scalable/apps/oledoro.svg"
+        if (File(userIconSvg).exists()) return userIconSvg
+        
+        val systemIconSvg = "/usr/share/icons/hicolor/scalable/apps/oledoro.svg"
+        if (File(systemIconSvg).exists()) return systemIconSvg
+        
+        // Try to extract from classpath (for development)
+        val classLoader = this.javaClass.classLoader
+        val resource = classLoader.getResource("oledoro.png")
+        if (resource != null) {
+            val file = File(resource.toURI())
+            if (file.exists()) return file.absolutePath
+        }
+        
+        val resourceSvg = classLoader.getResource("oledoro.svg")
+        if (resourceSvg != null) {
+            val file = File(resourceSvg.toURI())
+            if (file.exists()) return file.absolutePath
+        }
+        
+        return null
     }
 
     private fun iconExists(name: String): Boolean {
