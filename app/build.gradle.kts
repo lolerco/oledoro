@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.jakob.oledoro"
+    namespace = "com.lolerco.oledoro"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.jakob.oledoro"
+        applicationId = "com.lolerco.oledoro"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

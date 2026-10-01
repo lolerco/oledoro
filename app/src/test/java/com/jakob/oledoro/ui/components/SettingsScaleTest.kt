@@ -1,4 +1,4 @@
-package com.jakob.oledoro.ui.components
+package com.lolerco.oledoro.ui.components
 
 import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals

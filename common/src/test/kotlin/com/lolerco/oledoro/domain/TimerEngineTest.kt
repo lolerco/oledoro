@@ -169,4 +169,193 @@ class TimerEngineTest {
         engine.tick(1000L)
         assertEquals(-2000L, engine.state.value.remainingMs)
     }
+
+    @Test
+    fun `updateDurations while idle updates remaining and target`() {
+        val engine = TimerEngine()
+        engine.updateDurations(
+            focusMinutes = 50,
+            shortBreakMinutes = 10,
+            longBreakMinutes = 30,
+            breakInterval = 2
+        )
+
+        val state = engine.state.value
+        assertEquals(50 * 60 * 1000L, state.targetDurationMs)
+        assertEquals(50 * 60 * 1000L, state.remainingMs)
+        assertEquals(2, state.totalRounds)
+    }
+
+    @Test
+    fun `updateDurations while running preserves remaining time but updates target`() {
+        val engine = TimerEngine(focusDurationMs = 25 * 60 * 1000L)
+        engine.start()
+        engine.tick(5000L) // 5 seconds elapsed
+
+        val remainingBeforeUpdate = engine.state.value.remainingMs
+
+        engine.updateDurations(
+            focusMinutes = 60,
+            shortBreakMinutes = 10,
+            longBreakMinutes = 30,
+            breakInterval = 3
+        )
+
+        val state = engine.state.value
+        assertEquals(60 * 60 * 1000L, state.focusDurationMs)
+        assertEquals(remainingBeforeUpdate, state.remainingMs) // remaining unchanged
+        assertEquals(3, state.totalRounds)
+    }
+
+    @Test
+    fun `total focus and break time accumulates correctly during tick`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 5000L, shortBreakDurationMs = 3000L)
+        
+        // Start focus session
+        engine.start()
+        assertEquals(0L, engine.totalFocusTimeMs)
+        assertEquals(0L, engine.totalBreakTimeMs)
+        
+        // Tick 2 seconds in focus
+        engine.tick(2000L)
+        assertEquals(2000L, engine.totalFocusTimeMs)
+        assertEquals(0L, engine.totalBreakTimeMs)
+        
+        // Tick another 2 seconds in focus
+        engine.tick(2000L)
+        assertEquals(4000L, engine.totalFocusTimeMs)
+        assertEquals(0L, engine.totalBreakTimeMs)
+        
+        // Transition to short break
+        engine.nextPhase(autoStart = false)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        engine.start() // Start the break timer
+        
+        // Tick 2 seconds in break
+        engine.tick(2000L)
+        assertEquals(4000L, engine.totalFocusTimeMs) // Unchanged
+        assertEquals(2000L, engine.totalBreakTimeMs)
+        
+        // Tick another second in break
+        engine.tick(1000L)
+        assertEquals(4000L, engine.totalFocusTimeMs)
+        assertEquals(3000L, engine.totalBreakTimeMs)
+    }
+
+    @Test
+    fun `total time continues accumulating in overtime`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 1000L)
+        engine.start()
+        
+        // Tick to zero
+        engine.tick(1000L)
+        assertEquals(1000L, engine.totalFocusTimeMs)
+        
+        // Tick into overtime
+        engine.tick(1000L)
+        assertEquals(2000L, engine.totalFocusTimeMs) // Still accumulating in focus overtime
+        
+        // Tick further
+        engine.tick(1000L)
+        assertEquals(3000L, engine.totalFocusTimeMs)
+    }
+
+    @Test
+    fun `total time accumulates correctly when pause and resume`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 5000L)
+        engine.start()
+        
+        engine.tick(2000L)
+        assertEquals(2000L, engine.totalFocusTimeMs)
+        
+        engine.pause()
+        assertEquals(2000L, engine.totalFocusTimeMs)
+        
+        // Tick while paused should NOT accumulate
+        engine.tick(1000L)
+        assertEquals(2000L, engine.totalFocusTimeMs)
+        
+        engine.start()
+        engine.tick(1000L)
+        assertEquals(3000L, engine.totalFocusTimeMs)
+    }
+
+    @Test
+    fun `resetAll resets total time counters to zero`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 5000L)
+        engine.start()
+        engine.tick(2000L)
+        engine.nextPhase(autoStart = false)
+        engine.start() // Start the break timer
+        engine.tick(1000L)
+        
+        assertEquals(2000L, engine.totalFocusTimeMs)
+        assertEquals(1000L, engine.totalBreakTimeMs)
+        
+        engine.resetAll()
+        
+        assertEquals(0L, engine.totalFocusTimeMs)
+        assertEquals(0L, engine.totalBreakTimeMs)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+    }
+
+    @Test
+    fun `total time accumulates correctly across multiple focus and break cycles`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 5000L, shortBreakDurationMs = 3000L, totalRounds = 2)
+        
+        // Focus 1
+        engine.start()
+        engine.tick(5000L) // Complete focus 1
+        assertEquals(5000L, engine.totalFocusTimeMs)
+        
+        // Break 1
+        engine.nextPhase(autoStart = false)
+        engine.start()
+        engine.tick(3000L) // Complete break 1
+        assertEquals(3000L, engine.totalBreakTimeMs)
+        
+        // Focus 2
+        engine.nextPhase(autoStart = false)
+        engine.start()
+        engine.tick(5000L) // Complete focus 2
+        assertEquals(10000L, engine.totalFocusTimeMs)
+        
+        // Long Break
+        engine.nextPhase(autoStart = false)
+        engine.start()
+        engine.tick(3000L) // Complete long break
+        assertEquals(6000L, engine.totalBreakTimeMs)
+        
+        // Cycle restarts
+        engine.nextPhase(autoStart = false)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(1, engine.state.value.currentRound)
+    }
+
+    @Test
+    fun `timer state includes total focus and break time in copy`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 5000L)
+        engine.start()
+        engine.tick(2000L)
+        
+        val state = engine.state.value
+        assertEquals(2000L, state.totalFocusTimeMs)
+        assertEquals(0L, state.totalBreakTimeMs)
+    }
+
+    @Test
+    fun `updateDurations preserves total time counters`() = runTest {
+        val engine = TimerEngine(focusDurationMs = 5000L)
+        engine.start()
+        engine.tick(2000L)
+        
+        assertEquals(2000L, engine.totalFocusTimeMs)
+        
+        engine.updateDurations(50, 10, 30, 2)
+        
+        // Total time should be preserved
+        assertEquals(2000L, engine.totalFocusTimeMs)
+        assertEquals(0L, engine.totalBreakTimeMs)
+    }
 }

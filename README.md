@@ -163,18 +163,18 @@ All settings are persisted to `~/.oledoro/desktop.properties` (both platforms).
 
 ## Architecture
 
-### Domain Layer (`common/src/main/kotlin/com/jakob/oledoro/domain/`)
+### Domain Layer (`common/src/main/kotlin/com/lolerco/oledoro/domain/`)
 - **TimerEngine** — Core logic: tick, phase transitions, overtime, duration updates
 - **TimerState** — Immutable data: phase, status, durations, totals, progress
 - **TimerPhase** — FOCUS, SHORT_BREAK, LONG_BREAK, OVERTIME, IDLE
 - **TimerStatus** — IDLE, RUNNING, PAUSED, OVERTIME
 - **TimeFormatter** — `M:SS` formatting, progress calculation
 
-### Data Layer (`common/src/main/kotlin/com/jakob/oledoro/data/`)
+### Data Layer (`common/src/main/kotlin/com/lolerco/oledoro/data/`)
 - **AppSettingsManager** — Reactive settings with file persistence
 - **GruvboxColor** — Enum with Compose `Color` conversion
 
-### UI Layer (`common/src/main/kotlin/com/jakob/oledoro/ui/`)
+### UI Layer (`common/src/main/kotlin/com/lolerco/oledoro/ui/`)
 - **Theme** — Gruvbox colors, JetBrains Mono typography
 - **Components** — TimerDisplay, ControlsRow, SettingsDialog, NextPhasePreview, RoundIndicator
 - **Utils** — HapticHelper (no-op on Desktop)

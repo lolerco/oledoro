@@ -1,4 +1,4 @@
-package com.jakob.oledoro.ui.ambient
+package com.lolerco.oledoro.ui.ambient
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

@@ -6,7 +6,7 @@ plugins {
 
 compose.desktop {
     application {
-        mainClass = "com.jakob.oledoro.desktop.MainKt"
+        mainClass = "com.lolerco.oledoro.desktop.MainKt"
     }
 }
 
