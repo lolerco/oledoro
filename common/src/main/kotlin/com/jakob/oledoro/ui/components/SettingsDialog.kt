@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,7 +67,7 @@ fun SettingsDialog(
     onAutoBrightenOnFinishChange: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = null
     val scrollState = rememberScrollState()
 
     Dialog(onDismissRequest = onDismiss) {
@@ -428,7 +427,7 @@ fun SettingsDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.2",
+                            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.1",
                             fontFamily = JetBrainsMono,
                             fontSize = 11.sp,
                             color = AmbientCoolGray,
@@ -446,7 +445,7 @@ private fun ColorPickerSection(
     title: String,
     selectedColor: GruvboxColor,
     onColorSelected: (GruvboxColor) -> Unit,
-    context: android.content.Context
+    context: Any?
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),

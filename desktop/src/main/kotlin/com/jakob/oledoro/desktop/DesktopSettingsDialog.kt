@@ -1,4 +1,4 @@
-package com.jakob.oledoro.ui.components
+package com.jakob.oledoro.desktop
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,15 +25,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,15 +44,13 @@ import com.jakob.oledoro.ui.utils.HapticHelper
 import kotlin.math.roundToInt
 
 @Composable
-fun SettingsDialog(
+fun DesktopSettingsDialog(
     selectedThemeColor: GruvboxColor,
     onThemeColorChange: (GruvboxColor) -> Unit,
-    selectedBreakColor: GruvboxColor = GruvboxColor.AQUA,
-    onBreakColorChange: (GruvboxColor) -> Unit = {},
-    selectedNegativeColor: GruvboxColor = GruvboxColor.RED,
-    onNegativeColorChange: (GruvboxColor) -> Unit = {},
-    dimPercentage: Int,
-    onDimPercentageChange: (Int) -> Unit,
+    selectedBreakColor: GruvboxColor,
+    onBreakColorChange: (GruvboxColor) -> Unit,
+    selectedNegativeColor: GruvboxColor,
+    onNegativeColorChange: (GruvboxColor) -> Unit,
     focusMinutes: Int,
     onFocusMinutesChange: (Int) -> Unit,
     shortBreakMinutes: Int,
@@ -64,11 +59,9 @@ fun SettingsDialog(
     onLongBreakMinutesChange: (Int) -> Unit,
     longBreakInterval: Int,
     onLongBreakIntervalChange: (Int) -> Unit,
-    autoBrightenOnFinish: Boolean,
-    onAutoBrightenOnFinishChange: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = null
     val scrollState = rememberScrollState()
 
     Dialog(onDismissRequest = onDismiss) {
@@ -324,91 +317,6 @@ fun SettingsDialog(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Auto-Brighten on Finish Switch
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "AUTO LIGHTBULB",
-                            fontFamily = JetBrainsMono,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 12.sp,
-                            color = AmbientCoolGray,
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "dim when session starts, light up when finished",
-                            fontFamily = JetBrainsMono,
-                            fontSize = 10.sp,
-                            color = AmbientDimGray
-                        )
-                    }
-                    Switch(
-                        checked = autoBrightenOnFinish,
-                        onCheckedChange = {
-                            HapticHelper.performClick(context)
-                            onAutoBrightenOnFinishChange(it)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = selectedThemeColor.color,
-                            checkedTrackColor = selectedThemeColor.color.copy(alpha = 0.4f),
-                            uncheckedThumbColor = AmbientDimGray,
-                            uncheckedTrackColor = OledBlack
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Dim Percentage Slider
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "DIM LEVEL",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = AmbientCoolGray,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = "$dimPercentage%",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = selectedThemeColor.color
-                    )
-                }
-
-                Slider(
-                    value = dimPercentage.toFloat(),
-                    onValueChange = { floatVal ->
-                        val newInt = floatVal.roundToInt()
-                        if (newInt != dimPercentage) {
-                            HapticHelper.performTick(context)
-                            onDimPercentageChange(newInt)
-                        }
-                    },
-                    valueRange = 1f..50f,
-                    steps = 48,
-                    colors = SliderDefaults.colors(
-                        thumbColor = selectedThemeColor.color,
-                        activeTrackColor = selectedThemeColor.color,
-                        inactiveTrackColor = AmbientDimGray,
-                        activeTickColor = OledBlack,
-                        inactiveTickColor = selectedThemeColor.color.copy(alpha = 0.4f)
-                    )
-                )
-
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Credits and Info
@@ -428,7 +336,7 @@ fun SettingsDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.2",
+                            text = "minimalist, battery-saving pomodoro for oled displays - for linux.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.0",
                             fontFamily = JetBrainsMono,
                             fontSize = 11.sp,
                             color = AmbientCoolGray,
@@ -446,7 +354,7 @@ private fun ColorPickerSection(
     title: String,
     selectedColor: GruvboxColor,
     onColorSelected: (GruvboxColor) -> Unit,
-    context: android.content.Context
+    context: Any?
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
