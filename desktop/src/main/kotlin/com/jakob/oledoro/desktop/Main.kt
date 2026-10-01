@@ -3,11 +3,19 @@ package com.jakob.oledoro.desktop
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
@@ -18,12 +26,14 @@ import com.jakob.oledoro.data.GruvboxColor
 import com.jakob.oledoro.domain.*
 import com.jakob.oledoro.ui.components.*
 import com.jakob.oledoro.ui.theme.*
+import com.jakob.oledoro.ui.utils.HapticHelper
 import java.nio.file.Paths
 
 @Composable
 fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
     val timerState by engine.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    var settingsDialogVisible by remember { mutableStateOf(false) }
 
     OledPomodoroTheme {
         Box(
@@ -31,6 +41,30 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                 .fillMaxSize()
                 .background(OledBlack)
         ) {
+            // Top Action Bar (Lightbulb removed for desktop, only Settings gear)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Gear button: opens SettingsDialog
+                IconButton(
+                    onClick = {
+                        HapticHelper.performClick(null)
+                        settingsDialogVisible = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = AmbientCoolGray,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+
             // Centered timer display (mirrors AmbientScreen, no ambient/dimming)
             Column(
                 modifier = Modifier
@@ -100,6 +134,27 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                         )
                     }
                 }
+            }
+
+            // Settings Dialog Modal
+            if (settingsDialogVisible) {
+                DesktopSettingsDialog(
+                    selectedThemeColor = settings.themeColor,
+                    onThemeColorChange = { settings.setThemeColor(it) },
+                    selectedBreakColor = settings.breakColor,
+                    onBreakColorChange = { settings.setBreakColor(it) },
+                    selectedNegativeColor = settings.negativeColor,
+                    onNegativeColorChange = { settings.setNegativeColor(it) },
+                    focusMinutes = settings.focusMinutes,
+                    onFocusMinutesChange = { settings.setFocusMinutes(it) },
+                    shortBreakMinutes = settings.shortBreakMinutes,
+                    onShortBreakMinutesChange = { settings.setShortBreakMinutes(it) },
+                    longBreakMinutes = settings.longBreakMinutes,
+                    onLongBreakMinutesChange = { settings.setLongBreakMinutes(it) },
+                    longBreakInterval = settings.longBreakInterval,
+                    onLongBreakIntervalChange = { settings.setLongBreakInterval(it) },
+                    onDismiss = { settingsDialogVisible = false }
+                )
             }
         }
     }
