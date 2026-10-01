@@ -24,6 +24,9 @@ import com.jakob.oledoro.domain.*
 import com.jakob.oledoro.ui.components.*
 import com.jakob.oledoro.ui.theme.*
 import com.jakob.oledoro.ui.utils.HapticHelper
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @Composable
@@ -31,6 +34,27 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
     val timerState by engine.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var settingsDialogVisible by remember { mutableStateOf(false) }
+
+    // Observe timer events for notifications
+    LaunchedEffect(engine) {
+        engine.events.onEach { event ->
+            when (event) {
+                is TimerEvent.PhaseCompleted -> {
+                    val phaseName = event.phase.displayName
+                    val nextPhaseName = when (event.phase) {
+                        TimerPhase.FOCUS -> "Break"
+                        TimerPhase.SHORT_BREAK, TimerPhase.LONG_BREAK -> "Focus"
+                    }
+                    DesktopNotificationManager.notifyTimerFinished(phaseName, nextPhaseName)
+                }
+            }
+        }.launchIn(coroutineScope)
+    }
+
+    // Initialize notifications on startup
+    LaunchedEffect(Unit) {
+        DesktopNotificationManager.initialize()
+    }
 
     OledPomodoroTheme {
         Box(
@@ -206,7 +230,10 @@ fun main() = application {
     val engine = TimerEngine()
     val settings = AppSettingsManager()
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = {
+            DesktopNotificationManager.cleanup()
+            exitApplication()
+        },
         title = "oledoro",
         state = rememberWindowState(width = 600.dp, height = 800.dp)
     ) {
