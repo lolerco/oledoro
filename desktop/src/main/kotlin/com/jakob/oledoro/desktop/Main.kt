@@ -117,7 +117,7 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                     onStart = { engine.startTicker(coroutineScope) },
                     onPause = { engine.pause() },
                     onSkip = {
-                        settings.setDimmingActive(false)
+                        settings.updateDimmingActive(false)
                         engine.nextPhase(autoStart = false)
                     },
                     onReset = { engine.reset() },
@@ -129,19 +129,19 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
             if (settingsDialogVisible) {
                 DesktopSettingsDialog(
                     selectedThemeColor = settings.themeColor,
-                    onThemeColorChange = { settings.setThemeColor(it) },
+                    onThemeColorChange = { settings.updateThemeColor(it) },
                     selectedBreakColor = settings.breakColor,
-                    onBreakColorChange = { settings.setBreakColor(it) },
+                    onBreakColorChange = { settings.updateBreakColor(it) },
                     selectedNegativeColor = settings.negativeColor,
-                    onNegativeColorChange = { settings.setNegativeColor(it) },
+                    onNegativeColorChange = { settings.updateNegativeColor(it) },
                     focusMinutes = settings.focusMinutes,
-                    onFocusMinutesChange = { settings.setFocusMinutes(it) },
+                    onFocusMinutesChange = { settings.updateFocusMinutes(it) },
                     shortBreakMinutes = settings.shortBreakMinutes,
-                    onShortBreakMinutesChange = { settings.setShortBreakMinutes(it) },
+                    onShortBreakMinutesChange = { settings.updateShortBreakMinutes(it) },
                     longBreakMinutes = settings.longBreakMinutes,
-                    onLongBreakMinutesChange = { settings.setLongBreakMinutes(it) },
+                    onLongBreakMinutesChange = { settings.updateLongBreakMinutes(it) },
                     longBreakInterval = settings.longBreakInterval,
-                    onLongBreakIntervalChange = { settings.setLongBreakInterval(it) },
+                    onLongBreakIntervalChange = { settings.updateLongBreakInterval(it) },
                     onDismiss = { settingsDialogVisible = false }
                 )
             }

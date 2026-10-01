@@ -1,5 +1,8 @@
 package com.jakob.oledoro.data
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -30,6 +33,28 @@ enum class GruvboxColor(val displayName: String, val hex: String) {
 class AppSettingsManager(private val settingsFile: Path = Paths.get(System.getProperty("user.home"), ".oledoro", "desktop.properties")) {
     private val props = Properties()
 
+    // Observable state for Compose recomposition
+    var themeColor: GruvboxColor by mutableStateOf(parseColor(props.getProperty("themeColor", GruvboxColor.YELLOW.name)))
+        private set
+    var breakColor: GruvboxColor by mutableStateOf(parseColor(props.getProperty("breakColor", GruvboxColor.AQUA.name)))
+        private set
+    var negativeColor: GruvboxColor by mutableStateOf(parseColor(props.getProperty("negativeColor", GruvboxColor.RED.name)))
+        private set
+    var focusMinutes: Int by mutableStateOf(props.getProperty("focusMinutes", "25").toInt().coerceIn(1, 90))
+        private set
+    var shortBreakMinutes: Int by mutableStateOf(props.getProperty("shortBreakMinutes", "5").toInt().coerceIn(1, 30))
+        private set
+    var longBreakMinutes: Int by mutableStateOf(props.getProperty("longBreakMinutes", "15").toInt().coerceIn(1, 60))
+        private set
+    var longBreakInterval: Int by mutableStateOf(props.getProperty("longBreakInterval", "4").toInt().coerceIn(1, 10))
+        private set
+    var autoBrightenOnFinish: Boolean by mutableStateOf(props.getProperty("autoBrightenOnFinish", "true").toBoolean())
+        private set
+    var isDimmingActive: Boolean by mutableStateOf(props.getProperty("isDimmingActive", "false").toBoolean())
+        private set
+    var dimPercentage: Int by mutableStateOf(props.getProperty("dimPercentage", "5").toInt().coerceIn(1, 50))
+        private set
+
     init {
         try {
             if (Files.exists(settingsFile) && Files.size(settingsFile) > 0) {
@@ -38,38 +63,64 @@ class AppSettingsManager(private val settingsFile: Path = Paths.get(System.getPr
         } catch (_: Exception) {}
     }
 
-    val themeColor: GruvboxColor
-        get() = parseColor(props.getProperty("themeColor", GruvboxColor.YELLOW.name))
-    val breakColor: GruvboxColor
-        get() = parseColor(props.getProperty("breakColor", GruvboxColor.AQUA.name))
-    val negativeColor: GruvboxColor
-        get() = parseColor(props.getProperty("negativeColor", GruvboxColor.RED.name))
-    val focusMinutes: Int
-        get() = props.getProperty("focusMinutes", "25").toInt().coerceIn(1, 90)
-    val shortBreakMinutes: Int
-        get() = props.getProperty("shortBreakMinutes", "5").toInt().coerceIn(1, 30)
-    val longBreakMinutes: Int
-        get() = props.getProperty("longBreakMinutes", "15").toInt().coerceIn(1, 60)
-    val longBreakInterval: Int
-        get() = props.getProperty("longBreakInterval", "4").toInt().coerceIn(1, 10)
-    val autoBrightenOnFinish: Boolean
-        get() = props.getProperty("autoBrightenOnFinish", "true").toBoolean()
-    val isDimmingActive: Boolean
-        get() = props.getProperty("isDimmingActive", "false").toBoolean()
-    val dimPercentage: Int
-        get() = props.getProperty("dimPercentage", "5").toInt().coerceIn(1, 50)
-
-    fun setThemeColor(color: GruvboxColor) { props.setProperty("themeColor", color.name); save() }
-    fun setBreakColor(color: GruvboxColor) { props.setProperty("breakColor", color.name); save() }
-    fun setNegativeColor(color: GruvboxColor) { props.setProperty("negativeColor", color.name); save() }
-    fun setFocusMinutes(min: Int) { props.setProperty("focusMinutes", min.coerceIn(1, 90).toString()); save() }
-    fun setShortBreakMinutes(min: Int) { props.setProperty("shortBreakMinutes", min.coerceIn(1, 30).toString()); save() }
-    fun setLongBreakMinutes(min: Int) { props.setProperty("longBreakMinutes", min.coerceIn(1, 60).toString()); save() }
-    fun setLongBreakInterval(interval: Int) { props.setProperty("longBreakInterval", interval.coerceIn(1, 10).toString()); save() }
-    fun setAutoBrightenOnFinish(enabled: Boolean) { props.setProperty("autoBrightenOnFinish", enabled.toString()); save() }
-    fun setDimmingActive(active: Boolean) { props.setProperty("isDimmingActive", active.toString()); save() }
-    fun toggleDimming() { setDimmingActive(!isDimmingActive) }
-    fun setDimPercentage(pct: Int) { props.setProperty("dimPercentage", pct.coerceIn(1, 50).toString()); save() }
+    fun updateThemeColor(color: GruvboxColor) {
+        props.setProperty("themeColor", color.name)
+        themeColor = color
+        save()
+    }
+    fun updateBreakColor(color: GruvboxColor) {
+        props.setProperty("breakColor", color.name)
+        breakColor = color
+        save()
+    }
+    fun updateNegativeColor(color: GruvboxColor) {
+        props.setProperty("negativeColor", color.name)
+        negativeColor = color
+        save()
+    }
+    fun updateFocusMinutes(min: Int) {
+        val clamped = min.coerceIn(1, 90)
+        props.setProperty("focusMinutes", clamped.toString())
+        focusMinutes = clamped
+        save()
+    }
+    fun updateShortBreakMinutes(min: Int) {
+        val clamped = min.coerceIn(1, 30)
+        props.setProperty("shortBreakMinutes", clamped.toString())
+        shortBreakMinutes = clamped
+        save()
+    }
+    fun updateLongBreakMinutes(min: Int) {
+        val clamped = min.coerceIn(1, 60)
+        props.setProperty("longBreakMinutes", clamped.toString())
+        longBreakMinutes = clamped
+        save()
+    }
+    fun updateLongBreakInterval(interval: Int) {
+        val clamped = interval.coerceIn(1, 10)
+        props.setProperty("longBreakInterval", clamped.toString())
+        longBreakInterval = clamped
+        save()
+    }
+    fun updateAutoBrightenOnFinish(enabled: Boolean) {
+        props.setProperty("autoBrightenOnFinish", enabled.toString())
+        autoBrightenOnFinish = enabled
+        save()
+    }
+    fun updateDimmingActive(active: Boolean) {
+        props.setProperty("isDimmingActive", active.toString())
+        isDimmingActive = active
+        save()
+    }
+    fun toggleDimming() {
+        updateDimmingActive(!isDimmingActive)
+    }
+    fun updateDimPercentage(pct: Int) {
+        val clamped = pct.coerceIn(1, 50)
+        props.setProperty("dimPercentage", clamped.toString())
+        dimPercentage = clamped
+        save()
+    }
 
     private fun save() {
         try {
