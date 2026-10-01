@@ -227,8 +227,13 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
 }
 
 fun main() = application {
-    val engine = TimerEngine()
     val settings = AppSettingsManager()
+    val engine = TimerEngine(
+        focusDurationMs = settings.focusMinutes * 60 * 1000L,
+        shortBreakDurationMs = settings.shortBreakMinutes * 60 * 1000L,
+        longBreakDurationMs = settings.longBreakMinutes * 60 * 1000L,
+        totalRounds = settings.longBreakInterval
+    )
     Window(
         onCloseRequest = {
             DesktopNotificationManager.cleanup()
