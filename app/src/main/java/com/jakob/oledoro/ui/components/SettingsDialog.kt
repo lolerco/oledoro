@@ -428,7 +428,7 @@ fun SettingsDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco & gemini\nversion 1.1",
+                            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.1",
                             fontFamily = JetBrainsMono,
                             fontSize = 11.sp,
                             color = AmbientCoolGray,
