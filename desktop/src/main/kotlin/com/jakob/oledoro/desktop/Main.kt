@@ -53,7 +53,7 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
 
     // Initialize notifications on startup
     LaunchedEffect(Unit) {
-        DesktopNotificationManager.initialize()
+        DesktopNotificationManager.initialize(coroutineScope)
     }
 
     OledPomodoroTheme {

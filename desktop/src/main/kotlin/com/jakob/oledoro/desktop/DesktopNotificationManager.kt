@@ -1,99 +1,158 @@
 package com.jakob.oledoro.desktop
 
-import java.awt.AWTException
-import java.awt.Image
-import java.awt.SystemTray
-import java.awt.Toolkit
-import java.awt.TrayIcon
-import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
-import javax.swing.ImageIcon
-import javax.swing.JOptionPane
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 
+/**
+ * Cross-platform desktop notification manager.
+ * Uses native notification systems:
+ * - Linux: notify-send (libnotify)
+ * - Windows: PowerShell/Toast notifications
+ * - macOS: osascript/UserNotifications
+ * Falls back to System.out if no native system available.
+ */
 object DesktopNotificationManager {
-    private var trayIcon: TrayIcon? = null
-    private var initialized = false
-    private val logoImage: Image? by lazy { loadLogo() }
+    private enum class Platform { LINUX, WINDOWS, MACOS, UNKNOWN }
 
-    fun initialize() {
-        if (initialized || !SystemTray.isSupported()) return
-        try {
-            val tray = SystemTray.getSystemTray()
-            val iconImage = logoImage ?: Toolkit.getDefaultToolkit().createImage("logo.png")
-            trayIcon = TrayIcon(iconImage, "oledoro")
-            trayIcon?.setImageAutoSize(true)
-            tray.add(trayIcon!!)
-            initialized = true
-        } catch (e: AWTException) {
-            // System tray not available
-        } catch (e: Exception) {
-            // Ignore initialization errors
-        }
-    }
-
-    private fun loadLogo(): Image? {
-        return try {
-            // Try to load from resources
-            val resource = this.javaClass.getResource("/logo.png")
-            if (resource != null) {
-                ImageIO.read(resource.openStream())
-            } else {
-                // Fallback: create a simple colored icon
-                createDefaultIcon()
+    private val currentPlatform: Platform
+        get() {
+            val osName = System.getProperty("os.name").lowercase()
+            return when {
+                osName.contains("linux") -> Platform.LINUX
+                osName.contains("windows") -> Platform.WINDOWS
+                osName.contains("mac") -> Platform.MACOS
+                else -> Platform.UNKNOWN
             }
-        } catch (_: Exception) {
-            createDefaultIcon()
+        }
+
+    private var initialized = false
+    private lateinit var scope: CoroutineScope
+
+    fun initialize(coroutineScope: CoroutineScope) {
+        if (initialized) return
+        initialized = true
+        scope = coroutineScope
+        // Verify notification system availability
+        when (currentPlatform) {
+            Platform.LINUX -> checkCommand("notify-send", "--version")
+            Platform.WINDOWS -> {} // PowerShell always available on Windows 10+
+            Platform.MACOS -> checkCommand("osascript", "-e", "display notification")
+            else -> {}
         }
     }
 
-    private fun createDefaultIcon(): Image {
-        // Create a simple 32x32 icon programmatically
-        val image = BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB)
-        val g = image.graphics
-        g.color = java.awt.Color(0xFABD2F) // Gruvbox Yellow
-        g.fillOval(4, 4, 24, 24)
-        g.color = java.awt.Color.BLACK
-        g.drawString(">", 10, 22)
-        g.dispose()
-        return image
+    private fun checkCommand(vararg args: String): Boolean {
+        return try {
+            ProcessBuilder(*args).redirectErrorStream(true).start().waitFor() == 0
+        } catch (_: Exception) {
+            false
+        }
     }
 
+    /**
+     * Send a notification when a timer phase completes.
+     * @param phase The phase that just completed (e.g., "Focus", "Short Break")
+     * @param nextPhase The next phase starting (e.g., "Break", "Focus")
+     */
     fun notifyTimerFinished(phase: String, nextPhase: String) {
         val title = "oledoro - $phase completed"
         val message = "Time for $nextPhase"
         
-        // Try system tray notification first
-        if (initialized && trayIcon != null) {
-            trayIcon!!.displayMessage(title, message, TrayIcon.MessageType.INFO)
-            return
-        }
-        
-        // Fallback: Swing JOptionPane (less intrusive)
-        try {
-            val icon = logoImage?.let { ImageIcon(it) }
-            JOptionPane.showMessageDialog(null, message, title, JOptionPane.INFORMATION_MESSAGE, icon)
-        } catch (_: Exception) {
-            // Silent fallback - print to console
-            println("[$title] $message")
+        scope.launch(Dispatchers.IO) {
+            sendNotification(title, message, "timer")
         }
     }
 
+    /**
+     * Send a notification when a new phase starts.
+     */
     fun notifyPhaseStarted(phase: String) {
         val title = "oledoro - $phase started"
-        val message = "Focus session begun" 
+        val message = "Session begun"
         
-        if (initialized && trayIcon != null) {
-            trayIcon!!.displayMessage(title, message, TrayIcon.MessageType.INFO)
+        scope.launch(Dispatchers.IO) {
+            sendNotification(title, message, "timer")
+        }
+    }
+
+    private suspend fun sendNotification(title: String, message: String, iconName: String) {
+        withContext(Dispatchers.IO) {
+            when (currentPlatform) {
+                Platform.LINUX -> sendLinuxNotification(title, message, iconName)
+                Platform.WINDOWS -> sendWindowsNotification(title, message)
+                Platform.MACOS -> sendMacNotification(title, message)
+                else -> println("[$title] $message")
+            }
+        }
+    }
+
+    private fun sendLinuxNotification(title: String, message: String, iconName: String) {
+        try {
+            // notify-send supports --icon with icon name or path
+            // Try to use a named icon first, fallback to no icon
+            val iconArgs = if (iconExists(iconName)) {
+                listOf("--icon", iconName)
+            } else {
+                emptyList()
+            }
+            
+            ProcessBuilder(
+                listOf("notify-send", title, message) + iconArgs + listOf("--category", "timer")
+            ).start()
+        } catch (e: Exception) {
+            println("[$title] $message (notify-send failed: ${e.message})")
+        }
+    }
+
+    private fun iconExists(name: String): Boolean {
+        // Check common icon theme locations
+        val iconDirs = listOf(
+            "/usr/share/icons",
+            "/usr/local/share/icons",
+            System.getProperty("user.home") + "/.local/share/icons",
+            System.getProperty("user.home") + "/.icons"
+        )
+        
+        return iconDirs.any { dir ->
+            File(dir).walkTopDown()
+                .any { it.name.startsWith(name) && (it.extension == "png" || it.extension == "svg" || it.extension == "xpm") }
+        }
+    }
+
+    private fun sendWindowsNotification(title: String, message: String) {
+        try {
+            // Use PowerShell with a simpler approach - Windows 10+ supports BurntToast or direct toast XML
+            // Use a simple message box approach that works everywhere
+            val escapedTitle = title.replace("\"", "\\\"")
+            val escapedMessage = message.replace("\"", "\\\"")
+            val psScript = """
+                Add-Type -AssemblyName System.Windows.Forms
+                [System.Windows.Forms.MessageBox]::Show("$escapedMessage", "$escapedTitle", "OK", "Information") | Out-Null
+            """.trimIndent()
+            
+            ProcessBuilder("powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", psScript).start()
+        } catch (e: Exception) {
+            // Fallback: simple message box or console
+            println("[$title] $message (Windows notification failed: ${e.message})")
+        }
+    }
+
+    private fun sendMacNotification(title: String, message: String) {
+        try {
+            val escapedTitle = title.replace("\"", "\\\"")
+            val escapedMessage = message.replace("\"", "\\\"")
+            val script = "display notification \"$escapedMessage\" with title \"$escapedTitle\""
+            ProcessBuilder("osascript", "-e", script).start()
+        } catch (e: Exception) {
+            println("[$title] $message (osascript failed: ${e.message})")
         }
     }
 
     fun cleanup() {
-        if (initialized && trayIcon != null) {
-            try {
-                SystemTray.getSystemTray().remove(trayIcon!!)
-            } catch (_: Exception) {}
-            trayIcon = null
-            initialized = false
-        }
+        // No cleanup needed for stateless notifications
+        initialized = false
     }
 }
