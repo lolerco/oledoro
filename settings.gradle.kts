@@ -22,4 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "oledoro"
 include(":app")
 include(":common")
-include(":desktop")
+include(":desktopApp")
