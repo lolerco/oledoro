@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -121,7 +122,7 @@ fun NumpadInput(
         // Animated Numpad
         AnimatedVisibility(
             visible = showNumpad,
-            enter = expandVertically(expandFrom = 0) + fadeIn(),
+            enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
             Spacer(modifier = Modifier.height(12.dp))
@@ -288,11 +289,8 @@ private fun NumpadRow(
                     .background(backgroundColor, RoundedCornerShape(10.dp))
                     .border(1.dp, borderColor, RoundedCornerShape(10.dp))
                     .clickable(
-                        interactionSource = androidx.compose.foundation.interaction.MutableInteractionSource(),
-                        indication = androidx.compose.foundation.ripple.rememberRipple()
-                    ) {
-                        onKeyPress(key)
-                    }
+                        onClick = { onKeyPress(key) }
+                    )
             ) {
                 Text(
                     text = key,
