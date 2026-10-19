@@ -1,5 +1,10 @@
 package com.lolerco.oledoro.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +34,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -146,142 +155,49 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Focus Duration Slider
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "FOCUS TIME",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = AmbientCoolGray,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = "$focusMinutes min",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = selectedThemeColor.color
-                    )
-                }
-
-                Slider(
-                    value = focusMinutes.toFloat(),
-                    onValueChange = { floatVal ->
-                        val newInt = floatVal.roundToInt()
-                        if (newInt != focusMinutes) {
-                            HapticHelper.performTick(context)
-                            onFocusMinutesChange(newInt)
-                        }
-                    },
-                    valueRange = 1f..90f,
-                    steps = 88,
-                    colors = SliderDefaults.colors(
-                        thumbColor = selectedThemeColor.color,
-                        activeTrackColor = selectedThemeColor.color,
-                        inactiveTrackColor = AmbientDimGray,
-                        activeTickColor = OledBlack,
-                        inactiveTickColor = selectedThemeColor.color.copy(alpha = 0.4f)
-                    )
+                // Focus Duration - Numpad Input
+                NumpadInput(
+                    label = "FOCUS LENGTH",
+                    value = focusMinutes,
+                    onValueChange = onFocusMinutesChange,
+                    themeColor = selectedThemeColor.color,
+                    minValue = 1,
+                    maxValue = 90,
+                    unit = "mins",
+                    context = context
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Short Break Duration Slider
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "SHORT BREAK",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = AmbientCoolGray,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = "$shortBreakMinutes min",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = selectedThemeColor.color
-                    )
-                }
-
-                Slider(
-                    value = shortBreakMinutes.toFloat(),
-                    onValueChange = { floatVal ->
-                        val newInt = floatVal.roundToInt()
-                        if (newInt != shortBreakMinutes) {
-                            HapticHelper.performTick(context)
-                            onShortBreakMinutesChange(newInt)
-                        }
-                    },
-                    valueRange = 1f..30f,
-                    steps = 28,
-                    colors = SliderDefaults.colors(
-                        thumbColor = selectedThemeColor.color,
-                        activeTrackColor = selectedThemeColor.color,
-                        inactiveTrackColor = AmbientDimGray,
-                        activeTickColor = OledBlack,
-                        inactiveTickColor = selectedThemeColor.color.copy(alpha = 0.4f)
-                    )
+                // Short Break Duration - Numpad Input
+                NumpadInput(
+                    label = "BREAK LENGTH",
+                    value = shortBreakMinutes,
+                    onValueChange = onShortBreakMinutesChange,
+                    themeColor = selectedBreakColor.color,
+                    minValue = 1,
+                    maxValue = 30,
+                    unit = "mins",
+                    context = context
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Long Break Duration Slider
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "LONG BREAK",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = AmbientCoolGray,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = "$longBreakMinutes min",
-                        fontFamily = JetBrainsMono,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = selectedThemeColor.color
-                    )
-                }
-
-                Slider(
-                    value = longBreakMinutes.toFloat(),
-                    onValueChange = { floatVal ->
-                        val newInt = floatVal.roundToInt()
-                        if (newInt != longBreakMinutes) {
-                            HapticHelper.performTick(context)
-                            onLongBreakMinutesChange(newInt)
-                        }
-                    },
-                    valueRange = 1f..60f,
-                    steps = 58,
-                    colors = SliderDefaults.colors(
-                        thumbColor = selectedThemeColor.color,
-                        activeTrackColor = selectedThemeColor.color,
-                        inactiveTrackColor = AmbientDimGray,
-                        activeTickColor = OledBlack,
-                        inactiveTickColor = selectedThemeColor.color.copy(alpha = 0.4f)
-                    )
+                // Long Break Duration - Numpad Input
+                NumpadInput(
+                    label = "LONG BREAK",
+                    value = longBreakMinutes,
+                    onValueChange = onLongBreakMinutesChange,
+                    themeColor = selectedBreakColor.color,
+                    minValue = 1,
+                    maxValue = 60,
+                    unit = "mins",
+                    context = context
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Long Break Interval Slider
+                // Long Break Interval Slider (keep slider for small range)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
