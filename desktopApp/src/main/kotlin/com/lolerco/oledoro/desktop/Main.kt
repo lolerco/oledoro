@@ -226,23 +226,33 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
     }
 }
 
-fun main() = application {
-    val settings = AppSettingsManager()
-    val engine = TimerEngine(
-        focusDurationMs = settings.focusMinutes * 60 * 1000L,
-        shortBreakDurationMs = settings.shortBreakMinutes * 60 * 1000L,
-        longBreakDurationMs = settings.longBreakMinutes * 60 * 1000L,
-        totalRounds = settings.longBreakInterval
-    )
-    Window(
-        onCloseRequest = {
-            DesktopNotificationManager.cleanup()
-            exitApplication()
-        },
-        title = "oledoro",
-        state = rememberWindowState(width = 600.dp, height = 800.dp)
-    ) {
-        DesktopApp(engine, settings)
+fun main() {
+    if (java.awt.GraphicsEnvironment.isHeadless()) {
+        println("oledoro: Running in headless environment (no display detected).")
+        return
+    }
+    try {
+        application {
+            val settings = AppSettingsManager()
+            val engine = TimerEngine(
+                focusDurationMs = settings.focusMinutes * 60 * 1000L,
+                shortBreakDurationMs = settings.shortBreakMinutes * 60 * 1000L,
+                longBreakDurationMs = settings.longBreakMinutes * 60 * 1000L,
+                totalRounds = settings.longBreakInterval
+            )
+            Window(
+                onCloseRequest = {
+                    DesktopNotificationManager.cleanup()
+                    exitApplication()
+                },
+                title = "oledoro",
+                state = rememberWindowState(width = 600.dp, height = 800.dp)
+            ) {
+                DesktopApp(engine, settings)
+            }
+        }
+    } catch (e: java.awt.HeadlessException) {
+        println("oledoro: Headless environment detected (${e.message}).")
     }
 }
 
