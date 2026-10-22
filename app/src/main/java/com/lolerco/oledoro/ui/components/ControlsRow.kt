@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -25,9 +26,10 @@ import com.lolerco.oledoro.ui.utils.HapticHelper
 
 /**
  * Minimalist action buttons using Compose Material icons:
+ * - Reset session (Refresh)
  * - Play / Pause (PlayArrow / Pause)
  * - Next phase / Skip (SkipNext)
- * - Reset session (Refresh)
+ * - Skip to next and auto-start (FastForward)
  */
 @Composable
 fun ControlsRow(
@@ -36,6 +38,8 @@ fun ControlsRow(
     onPause: () -> Unit,
     onSkip: () -> Unit,
     onReset: () -> Unit,
+    onFastForward: () -> Unit = {},
+    onSkipAndStart: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     tint: Color = AmbientCoolGray,
     iconSize: Dp = 28.dp,
@@ -43,6 +47,7 @@ fun ControlsRow(
 ) {
     val isRunning = status == TimerStatus.RUNNING || status == TimerStatus.OVERTIME
     val context = LocalContext.current
+    val handleFastForward = onSkipAndStart ?: onFastForward
 
     Row(
         modifier = modifier,
@@ -96,6 +101,22 @@ fun ControlsRow(
             Icon(
                 imageVector = Icons.Default.SkipNext,
                 contentDescription = stringResource(R.string.action_skip),
+                tint = tint,
+                modifier = Modifier.size(iconSize)
+            )
+        }
+
+        // Fast Forward / Skip and Start button
+        IconButton(
+            onClick = {
+                HapticHelper.performClick(context)
+                handleFastForward()
+            },
+            modifier = Modifier.size(iconSize + 16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.FastForward,
+                contentDescription = stringResource(R.string.action_fast_forward),
                 tint = tint,
                 modifier = Modifier.size(iconSize)
             )
