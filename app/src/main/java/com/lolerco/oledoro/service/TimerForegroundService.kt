@@ -95,7 +95,13 @@ class TimerForegroundService : Service() {
             startForegroundWithNotification(engine.state.value)
         }
 
-        return START_STICKY
+        return START_NOT_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        engine.pause()
+        stopForegroundService()
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -104,7 +110,20 @@ class TimerForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        isForeground = false
+        stateObservationJob?.cancel()
+        eventObservationJob?.cancel()
         serviceScope.cancel()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        if (::notificationManager.isInitialized) {
+            notificationManager.cancel(NotificationHelper.NOTIFICATION_ID_TIMER)
+            notificationManager.cancel(NotificationHelper.NOTIFICATION_ID_ALERT)
+        }
     }
 
     private fun startForegroundWithNotification(state: TimerState) {
@@ -151,11 +170,17 @@ class TimerForegroundService : Service() {
 
     private fun stopForegroundService() {
         isForeground = false
+        stateObservationJob?.cancel()
+        eventObservationJob?.cancel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
             @Suppress("DEPRECATION")
             stopForeground(true)
+        }
+        if (::notificationManager.isInitialized) {
+            notificationManager.cancel(NotificationHelper.NOTIFICATION_ID_TIMER)
+            notificationManager.cancel(NotificationHelper.NOTIFICATION_ID_ALERT)
         }
         stopSelf()
     }
