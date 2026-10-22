@@ -326,7 +326,7 @@ fun SettingsDialog(
                 ) {
                     Column {
                         Text(
-                            text = "oledoro",
+                            text = "oledoro v1.4.0",
                             fontFamily = JetBrainsMono,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
