@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.lolerco.oledoro.data.GruvboxColor
-import com.lolerco.oledoro.ui.components.NumpadInput
+import com.lolerco.oledoro.ui.components.NumberInputField
 import com.lolerco.oledoro.ui.theme.AmbientCoolGray
 import com.lolerco.oledoro.ui.theme.AmbientDimGray
 import com.lolerco.oledoro.ui.theme.JetBrainsMono
@@ -140,8 +140,8 @@ fun DesktopSettingsDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Focus Duration - Numpad Input
-                NumpadInput(
+                // Focus Duration - Number Input Field
+                NumberInputField(
                     label = "FOCUS LENGTH",
                     value = focusMinutes,
                     onValueChange = onFocusMinutesChange,
@@ -154,8 +154,8 @@ fun DesktopSettingsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Short Break Duration - Numpad Input
-                NumpadInput(
+                // Short Break Duration - Number Input Field
+                NumberInputField(
                     label = "BREAK LENGTH",
                     value = shortBreakMinutes,
                     onValueChange = onShortBreakMinutesChange,
@@ -168,8 +168,8 @@ fun DesktopSettingsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Long Break Duration - Numpad Input
-                NumpadInput(
+                // Long Break Duration - Number Input Field
+                NumberInputField(
                     label = "LONG BREAK",
                     value = longBreakMinutes,
                     onValueChange = onLongBreakMinutesChange,

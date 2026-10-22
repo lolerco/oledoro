@@ -145,8 +145,8 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Focus Duration - Numpad Input
-                NumpadInput(
+                // Focus Duration - Number Input Field
+                NumberInputField(
                     label = "FOCUS LENGTH",
                     value = focusMinutes,
                     onValueChange = onFocusMinutesChange,
@@ -159,8 +159,8 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Short Break Duration - Numpad Input
-                NumpadInput(
+                // Short Break Duration - Number Input Field
+                NumberInputField(
                     label = "BREAK LENGTH",
                     value = shortBreakMinutes,
                     onValueChange = onShortBreakMinutesChange,
@@ -173,8 +173,8 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Long Break Duration - Numpad Input
-                NumpadInput(
+                // Long Break Duration - Number Input Field
+                NumberInputField(
                     label = "LONG BREAK",
                     value = longBreakMinutes,
                     onValueChange = onLongBreakMinutesChange,

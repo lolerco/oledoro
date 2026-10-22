@@ -1,69 +1,64 @@
 package com.lolerco.oledoro.desktop
 
-import org.junit.Test
+import com.lolerco.oledoro.ui.components.NumberInputHelper
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class NumpadInputTest {
+
     @Test
-    fun numpadInput_clampsToMax() {
+    fun numberInput_allowsOnlyNumericCharacters() {
+        assertEquals("123", NumberInputHelper.filterDigits("123"))
+        assertEquals("123", NumberInputHelper.filterDigits("1a2b3c"))
+        assertEquals("42", NumberInputHelper.filterDigits("$42 mins"))
+    }
+
+    @Test
+    fun numberInput_clampsToMax() {
         val minValue = 1
         val maxValue = 90
-        val inputValue = 999
-        val clampedValue = inputValue.coerceIn(minValue, maxValue)
-        assertTrue(clampedValue == 90)
+        val clamped = NumberInputHelper.parseAndClamp("999", minValue, maxValue)
+        assertEquals(90, clamped)
     }
 
     @Test
-    fun numpadInput_clampsToMin() {
+    fun numberInput_clampsToMin() {
         val minValue = 1
         val maxValue = 90
-        val inputValue = 0
-        val clampedValue = inputValue.coerceIn(minValue, maxValue)
-        assertTrue(clampedValue == 1)
+        val clamped = NumberInputHelper.parseAndClamp("0", minValue, maxValue)
+        assertEquals(1, clamped)
     }
 
     @Test
-    fun numpadInput_parseValidNumber() {
-        val input = "25"
-        val parsed = input.toIntOrNull() ?: 0
-        assertTrue(parsed == 25)
+    fun numberInput_parseValidNumber() {
+        val parsed = NumberInputHelper.parseAndClamp("25", 1, 90)
+        assertEquals(25, parsed)
     }
 
     @Test
-    fun numpadInput_parseEmptyNumber() {
-        val input = ""
-        val parsed = input.toIntOrNull() ?: 0
-        assertTrue(parsed == 0)
+    fun numberInput_parseEmptyNumber() {
+        val parsed = NumberInputHelper.parseAndClamp("", 1, 90, default = 1)
+        assertEquals(1, parsed)
     }
 
     @Test
-    fun numpadInput_parseInvalidNumber() {
-        val input = "abc"
-        val parsed = input.toIntOrNull() ?: 0
-        assertTrue(parsed == 0)
-    }
-
-    // Simulate the backspace logic: drop last character
-    @Test
-    fun numpadInput_backspace() {
-        val buffer = "25"
-        val afterBackspace = buffer.dropLast(1)
-        assertTrue(afterBackspace == "2")
+    fun numberInput_parseInvalidNumber() {
+        val parsed = NumberInputHelper.parseAndClamp("abc", 1, 90, default = 1)
+        assertEquals(1, parsed)
     }
 
     @Test
-    fun numpadInput_backspaceEmpty() {
-        val buffer = ""
-        val afterBackspace = if (buffer.isNotEmpty()) buffer.dropLast(1) else buffer
-        assertTrue(afterBackspace == "")
+    fun numberInput_enforcesMaxDigitsLimit() {
+        val filtered = NumberInputHelper.filterDigits("12345", maxDigits = 3)
+        assertEquals("123", filtered)
     }
 
-    // Simulate appending digits
     @Test
-    fun numpadInput_appendDigits() {
-        var buffer = "2"
-        buffer = buffer + "5"
-        buffer = buffer + "0"
-        assertTrue(buffer == "250")
+    fun numberInput_validatesDigitsOnly() {
+        assertTrue(NumberInputHelper.isValidInput("25", maxDigits = 3))
+        assertFalse(NumberInputHelper.isValidInput("25a", maxDigits = 3))
+        assertFalse(NumberInputHelper.isValidInput("1234", maxDigits = 3))
     }
 }
