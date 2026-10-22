@@ -2,6 +2,30 @@
 
 All notable changes to oledoro will be documented in this file.
 
+## [1.4.0] - 2026-10-22
+
+### Added
+- **Fast-Forward / Skip**: Fast-forward button in `ControlsRow` to skip the current phase and auto-start the next timer interval.
+- **Clickable Numeric Input Fields**: `NumberInputField` in settings dialogs across common, Android, and Desktop modules.
+  - Spawns native numeric keyboard (`KeyboardType.Number`) on mobile.
+  - Supports direct numeric input via physical keyboard on desktop.
+  - Non-digit filtering and automatic range clamping (`[minValue..maxValue]`).
+- **Unit Tests**: Full unit test suites for `NumberInputHelper`, `TimerEngine` skip/cycle logic, and `ControlsRowLogic`.
+
+### Changed
+- **Settings UI**: Replaced on-screen 3x4 numpad widget with clean clickable numeric input boxes.
+- **Theme Consistency**: All duration input active borders and highlights use the main accent color rather than timer state colors.
+- **Build System**: Configured `jvmToolchain(21)` across all modules (`app`, `common`, `desktopApp`) for cross-system reproducibility.
+
+### Fixed
+- **Android Task Dismissal**: Implemented `onTaskRemoved()` and `START_NOT_STICKY` in `TimerForegroundService` so killing the app from the Android Recents / Overview task switcher stops the service and dismisses ongoing notifications.
+- **Desktop Headless Fallback**: Handled headless environments gracefully in Desktop `Main.kt`.
+
+## [1.3.0] - 2026-10-19
+
+### Added
+- In-app numpad input fields for entering duration settings directly.
+
 ## [1.2.0] - 2026-10-01
 
 ### Added - Desktop (Linux/Windows/macOS) Support
@@ -66,3 +90,20 @@ oledoro/
 - **Desktop**: Compose Desktop 1.7.3, JVM target 17
 - **Coroutines**: 1.8.1
 - **Architecture**: MVVM (Android) / Compose state (Desktop), shared domain layer
+
+## [1.1.0] - 2026-09-22
+
+### Added
+- Isolated clock digit color switching.
+- Skip auto-brighten feature.
+- Two-way automatic brightness/dimming toggling during focus sessions.
+- Independent UI element colors across timer components.
+
+## [1.0.0] - 2026-09-21
+
+### Added
+- Initial release of oledoro for Android.
+- Minimalist OLED true-black design with Gruvbox theme palette.
+- Pomodoro timer core logic (Focus, Short Break, Long Break cycles).
+- Foreground service for background execution and ongoing notifications.
+- Ambient/Always-on display support on Android.
