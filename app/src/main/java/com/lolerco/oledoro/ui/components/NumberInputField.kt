@@ -1,5 +1,6 @@
 package com.lolerco.oledoro.ui.components
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +32,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -76,8 +78,9 @@ fun NumberInputField(
     minValue: Int = 1,
     maxValue: Int = 999,
     unit: String = "min",
-    context: Any? = null
+    context: Context? = null
 ) {
+    val actualContext = context ?: LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     var isFocused by remember { mutableStateOf(false) }
@@ -149,7 +152,7 @@ fun NumberInputField(
                             if (focusState.isFocused != isFocused) {
                                 isFocused = focusState.isFocused
                                 if (isFocused) {
-                                    HapticHelper.performClick(context)
+                                    HapticHelper.performClick(actualContext)
                                 } else {
                                     val parsed = NumberInputHelper.parseAndClamp(
                                         textValue,
@@ -232,7 +235,7 @@ fun NumpadInput(
     minValue: Int = 1,
     maxValue: Int = 999,
     unit: String = "min",
-    context: Any? = null
+    context: Context? = null
 ) {
     NumberInputField(
         label = label,
