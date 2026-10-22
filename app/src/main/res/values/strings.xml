@@ -11,6 +11,8 @@
     <string name="action_pause">Pause</string>
     <string name="action_resume">Resume</string>
     <string name="action_skip">Skip</string>
+    <string name="action_fast_forward">Fast Forward</string>
+    <string name="action_skip_and_start">Skip and Start</string>
     <string name="action_reset">Reset</string>
     <string name="action_start_break">Start Break</string>
     <string name="action_start_focus">Start Focus</string>

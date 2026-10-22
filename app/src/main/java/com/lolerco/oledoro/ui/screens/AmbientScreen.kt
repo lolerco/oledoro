@@ -86,6 +86,7 @@ fun AmbientScreen(
     onAutoBrightenOnFinishChange: (Boolean) -> Unit = {},
     onStart: () -> Unit,
     onPause: () -> Unit,
+    onFastForward: () -> Unit = {},
     onSkip: () -> Unit,
     onReset: () -> Unit,
     modifier: Modifier = Modifier,
@@ -233,6 +234,7 @@ fun AmbientScreen(
                     status = state.status,
                     onStart = onStart,
                     onPause = onPause,
+                    onFastForward = onFastForward,
                     onSkip = onSkip,
                     onReset = onReset,
                     tint = AmbientCoolGray

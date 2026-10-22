@@ -141,6 +141,13 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                     status = timerState.status,
                     onStart = { engine.startTicker(coroutineScope) },
                     onPause = { engine.pause() },
+                    onFastForward = {
+                        if (settings.autoBrightenOnFinish) {
+                            settings.updateDimmingActive(true)
+                        }
+                        engine.nextPhase(autoStart = true)
+                        engine.startTicker(coroutineScope)
+                    },
                     onSkip = {
                         settings.updateDimmingActive(false)
                         engine.nextPhase(autoStart = false)

@@ -92,6 +92,16 @@ class MainViewModel : ViewModel() {
         engine.pause()
     }
 
+    fun fastForward() {
+        if (settingsManager.autoBrightenOnFinish.value) {
+            settingsManager.setDimmingActive(true)
+        }
+        engine.nextPhase(autoStart = true)
+        engine.startTicker(viewModelScope)
+    }
+
+    fun skipAndStart() = fastForward()
+
     fun skip() {
         settingsManager.setDimmingActive(false)
         engine.nextPhase(autoStart = false)
@@ -229,6 +239,10 @@ class MainActivity : ComponentActivity() {
                     onPause = {
                         viewModel.pause()
                         TimerForegroundService.startService(this, TimerForegroundService.ACTION_SYNC)
+                    },
+                    onFastForward = {
+                        viewModel.fastForward()
+                        TimerForegroundService.startService(this, TimerForegroundService.ACTION_START_SERVICE)
                     },
                     onSkip = {
                         viewModel.skip()

@@ -358,4 +358,77 @@ class TimerEngineTest {
         assertEquals(2000L, engine.totalFocusTimeMs)
         assertEquals(0L, engine.totalBreakTimeMs)
     }
+
+    @Test
+    fun `nextPhase with autoStart true transitions phase and immediately runs`() {
+        val engine = TimerEngine()
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+
+        // Fast forward Focus 1 -> Short Break 1
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertEquals(5 * 60 * 1000L, engine.state.value.remainingMs)
+
+        // Fast forward Short Break 1 -> Focus 2
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(2, engine.state.value.currentRound)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertEquals(25 * 60 * 1000L, engine.state.value.remainingMs)
+
+        // Fast forward Focus 2 -> Short Break 2
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+
+        // Fast forward Short Break 2 -> Focus 3
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(3, engine.state.value.currentRound)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+
+        // Fast forward Focus 3 -> Short Break 3
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+
+        // Fast forward Short Break 3 -> Focus 4
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(4, engine.state.value.currentRound)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+
+        // Fast forward Focus 4 -> Long Break
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.LONG_BREAK, engine.state.value.phase)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertEquals(15 * 60 * 1000L, engine.state.value.remainingMs)
+
+        // Fast forward Long Break -> Focus 1 (cycle resets)
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(1, engine.state.value.currentRound)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertEquals(25 * 60 * 1000L, engine.state.value.remainingMs)
+    }
+
+    @Test
+    fun `nextPhase with autoStart true sets status to running and ticks down`() {
+        val engine = TimerEngine(focusDurationMs = 5000L, shortBreakDurationMs = 3000L)
+        assertEquals(TimerPhase.FOCUS, engine.state.value.phase)
+        assertEquals(TimerStatus.IDLE, engine.state.value.status)
+
+        // Skip to short break with autoStart = true
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        assertEquals(TimerStatus.RUNNING, engine.state.value.status)
+        assertEquals(3000L, engine.state.value.remainingMs)
+
+        // Tick by 1000ms while running
+        engine.tick(1000L)
+        assertEquals(2000L, engine.state.value.remainingMs)
+        assertEquals(1000L, engine.totalBreakTimeMs)
+    }
 }
