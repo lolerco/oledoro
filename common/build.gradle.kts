@@ -3,6 +3,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+kotlin {
+    jvmToolchain(21)
+}
 
 dependencies {
     implementation("org.jetbrains.compose.ui:ui:1.7.3")
