@@ -1,5 +1,6 @@
 package com.lolerco.oledoro.ui.components
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,9 +40,10 @@ import com.lolerco.oledoro.ui.utils.HapticHelper
 @Composable
 fun ChangelogSection(
     themeColor: Color,
-    context: Any? = null,
+    context: Context? = null,
     modifier: Modifier = Modifier
 ) {
+    val actualContext = context ?: LocalContext.current
     var isExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -51,7 +54,7 @@ fun ChangelogSection(
                 .border(1.dp, if (isExpanded) themeColor else AmbientDimGray, RoundedCornerShape(8.dp))
                 .background(Color(0xFF111111), RoundedCornerShape(8.dp))
                 .clickable {
-                    HapticHelper.performClick(context)
+                    HapticHelper.performClick(actualContext)
                     isExpanded = !isExpanded
                 }
                 .padding(vertical = 10.dp, horizontal = 14.dp),

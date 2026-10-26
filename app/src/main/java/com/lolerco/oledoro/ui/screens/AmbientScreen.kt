@@ -102,10 +102,11 @@ fun AmbientScreen(
     val burnInOffset by rememberBurnInShift(enabled = enableBurnInShift)
 
     // Controls, Settings and Study Stats visibility states
+    val context = LocalContext.current
     var controlsVisible by remember { mutableStateOf(false) }
     var settingsDialogVisible by remember { mutableStateOf(false) }
     var statsDialogVisible by remember { mutableStateOf(false) }
-    val statsRepo = remember { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
+    val statsRepo = remember(context) { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
 
     val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
     val isBreak = state.phase == TimerPhase.SHORT_BREAK || state.phase == TimerPhase.LONG_BREAK
@@ -114,8 +115,6 @@ fun AmbientScreen(
         isBreak -> breakColor.color
         else -> themeColor.color
     }
-
-    val context = LocalContext.current
 
     Box(
         modifier = modifier
