@@ -7,6 +7,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.LocalDate
 
+data class DailyStudyStats(
+    val date: String, // "YYYY-MM-DD"
+    val focusTimeMs: Long = 0L,
+    val breakTimeMs: Long = 0L
+) {
+    val totalTimeMs: Long get() = focusTimeMs + breakTimeMs
+}
+
 class AndroidStudyStatsRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     
@@ -46,6 +54,21 @@ class AndroidStudyStatsRepository(context: Context) {
         return (days - 1 downTo 0).map { offset ->
             val dateStr = today.minusDays(offset.toLong()).toString()
             getDailyStats(dateStr)
+        }
+    }
+
+    @Synchronized
+    fun getAllTrackedDays(): List<DailyStudyStats> {
+        val dates = prefs.all.keys
+            .filter { it.endsWith("_focus") || it.endsWith("_break") }
+            .map { it.substringBeforeLast("_") }
+            .distinct()
+            .sorted()
+        val stats = dates.map { getDailyStats(it) }.filter { it.focusTimeMs > 0L || it.breakTimeMs > 0L }
+        return if (stats.isEmpty()) {
+            listOf(getDailyStats(LocalDate.now().toString()))
+        } else {
+            stats
         }
     }
 

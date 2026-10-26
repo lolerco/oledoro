@@ -53,4 +53,25 @@ class StudyStatsTest {
             Files.deleteIfExists(tempFile)
         }
     }
+
+    @Test
+    fun testGetAllTrackedDays() {
+        val tempFile = Files.createTempFile("oledoro-stats-all-", ".properties")
+        try {
+            val repo = DesktopStudyStatsRepository(tempFile)
+            repo.recordTime(focusDeltaMs = 60000L, breakDeltaMs = 0L, date = "2026-10-22")
+            repo.recordTime(focusDeltaMs = 0L, breakDeltaMs = 30000L, date = "2026-10-24")
+            val all = repo.getAllTrackedDays()
+            assertEquals(2, all.size)
+            assertEquals("2026-10-22", all[0].date)
+            assertEquals(60000L, all[0].focusTimeMs)
+            assertEquals(0L, all[0].breakTimeMs)
+            assertEquals("2026-10-24", all[1].date)
+            assertEquals(0L, all[1].focusTimeMs)
+            assertEquals(30000L, all[1].breakTimeMs)
+            assertEquals(30000L, all[1].totalTimeMs)
+        } finally {
+            Files.deleteIfExists(tempFile)
+        }
+    }
 }
