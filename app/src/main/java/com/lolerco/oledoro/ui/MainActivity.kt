@@ -39,9 +39,9 @@ import kotlinx.coroutines.flow.onEach
  * synchronize on the exact same timer state.
  */
 object TimerEngineHolder {
+    val statsRepo by lazy { com.lolerco.oledoro.data.AndroidStudyStatsRepository(OledoroApp.instance) }
     val engine: TimerEngine by lazy {
         val sm = OledoroApp.settingsManager
-        val statsRepo = com.lolerco.oledoro.data.AndroidStudyStatsRepository(OledoroApp.instance)
         TimerEngine(
             focusDurationMs = sm.focusMinutes.value.coerceIn(1, 90) * 60 * 1000L,
             shortBreakDurationMs = sm.shortBreakMinutes.value.coerceIn(1, 30) * 60 * 1000L,

@@ -21,6 +21,8 @@ class DesktopStudyStatsRepository(
     private val statsFile: Path = Paths.get(System.getProperty("user.home"), ".oledoro", "study_stats.properties")
 ) {
     private val props = Properties()
+    private var hasUnsavedChanges = false
+    private var lastFlushTimeMs: Long = System.currentTimeMillis()
 
     // Observable version counter to trigger Compose recomposition on state changes
     var updateTrigger: Long by mutableStateOf(0L)
@@ -28,6 +30,11 @@ class DesktopStudyStatsRepository(
 
     init {
         load()
+        try {
+            Runtime.getRuntime().addShutdownHook(Thread {
+                flush()
+            })
+        } catch (_: Exception) {}
     }
 
     @Synchronized
@@ -49,6 +56,15 @@ class DesktopStudyStatsRepository(
     }
 
     @Synchronized
+    fun flush() {
+        if (hasUnsavedChanges) {
+            save()
+            hasUnsavedChanges = false
+            lastFlushTimeMs = System.currentTimeMillis()
+        }
+    }
+
+    @Synchronized
     fun recordTime(focusDeltaMs: Long, breakDeltaMs: Long, date: String = LocalDate.now().toString()) {
         if (focusDeltaMs <= 0L && breakDeltaMs <= 0L) return
         
@@ -60,7 +76,14 @@ class DesktopStudyStatsRepository(
         
         props.setProperty(focusKey, (currentFocus + focusDeltaMs).toString())
         props.setProperty(breakKey, (currentBreak + breakDeltaMs).toString())
-        save()
+        hasUnsavedChanges = true
+        updateTrigger++
+
+        // Flush to disk at most once every 5 minutes during long uninterrupted sessions
+        val now = System.currentTimeMillis()
+        if (now - lastFlushTimeMs >= 5 * 60 * 1000L) {
+            flush()
+        }
     }
 
     @Synchronized

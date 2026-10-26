@@ -64,6 +64,8 @@ class TimerEngine(
     private var activeScope: CoroutineScope? = coroutineScope
     private var tickerJob: Job? = null
 
+    private var lastTickTime: Long = 0L
+
     @Synchronized
     fun start() {
         val current = _state.value
@@ -72,6 +74,7 @@ class TimerEngine(
         }
         val newStatus = if (current.remainingMs <= 0L) TimerStatus.OVERTIME else TimerStatus.RUNNING
         _state.value = current.copy(status = newStatus)
+        lastTickTime = System.currentTimeMillis()
 
         activeScope?.let { scope ->
             ensureTickerRunning(scope)
@@ -80,10 +83,16 @@ class TimerEngine(
 
     private fun ensureTickerRunning(scope: CoroutineScope, tickIntervalMs: Long = 1000L) {
         if (tickerJob == null || tickerJob?.isActive == false) {
+            if (lastTickTime == 0L) {
+                lastTickTime = System.currentTimeMillis()
+            }
             tickerJob = scope.launch {
                 while (isActive) {
                     delay(tickIntervalMs)
-                    tick(tickIntervalMs)
+                    val now = System.currentTimeMillis()
+                    val delta = if (lastTickTime > 0L) (now - lastTickTime).coerceAtLeast(0L) else tickIntervalMs
+                    lastTickTime = now
+                    tick(delta)
                 }
             }
         }
@@ -94,11 +103,17 @@ class TimerEngine(
         val current = _state.value
         if (current.status == TimerStatus.RUNNING || current.status == TimerStatus.OVERTIME) {
             _state.value = current.copy(status = TimerStatus.PAUSED)
+            lastTickTime = 0L
+            tickerJob?.cancel()
+            tickerJob = null
         }
     }
 
     @Synchronized
     fun reset() {
+        lastTickTime = 0L
+        tickerJob?.cancel()
+        tickerJob = null
         val current = _state.value
         _state.value = current.copy(
             status = TimerStatus.IDLE,
@@ -108,6 +123,9 @@ class TimerEngine(
 
     @Synchronized
     fun resetAll() {
+        lastTickTime = 0L
+        tickerJob?.cancel()
+        tickerJob = null
         completedFocusCount = 0
         _totalFocusTimeMs = 0L
         _totalBreakTimeMs = 0L

@@ -110,6 +110,7 @@ class TimerForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        TimerEngineHolder.statsRepo.flush()
         isForeground = false
         stateObservationJob?.cancel()
         eventObservationJob?.cancel()
@@ -143,10 +144,37 @@ class TimerForegroundService : Service() {
         isForeground = true
     }
 
+    private var lastNotifiedPhase: TimerPhase? = null
+    private var lastNotifiedStatus: TimerStatus? = null
+    private var lastNotifiedIsOvertime: Boolean? = null
+    private var lastNotificationPostTimeMs: Long = 0L
+
     private fun observeTimerState() {
         stateObservationJob?.cancel()
         stateObservationJob = engine.state.onEach { state ->
-            if (isForeground) {
+            if (!isForeground) return@onEach
+
+            val statusChanged = state.status != lastNotifiedStatus
+            val phaseChanged = state.phase != lastNotifiedPhase
+            val overtimeChanged = state.isOvertime != lastNotifiedIsOvertime
+            val now = System.currentTimeMillis()
+
+            // When actively running a countdown, Android SystemUI chronometer counts down
+            // natively on the display hardware without app wakeups or IPC calls.
+            // We only re-post the notification when:
+            // 1) Status or Phase changes (start, pause, resume, new phase)
+            // 2) Transition into / out of overtime
+            // 3) While in overtime, throttled to at most once every 10 seconds
+            // 4) Heartbeat once every 60 seconds
+            val shouldNotify = statusChanged || phaseChanged || overtimeChanged ||
+                    (state.isOvertime && (now - lastNotificationPostTimeMs >= 10_000L)) ||
+                    (now - lastNotificationPostTimeMs >= 60_000L)
+
+            if (shouldNotify) {
+                lastNotifiedStatus = state.status
+                lastNotifiedPhase = state.phase
+                lastNotifiedIsOvertime = state.isOvertime
+                lastNotificationPostTimeMs = now
                 val notification = notificationHelper.buildTimerNotification(state)
                 notificationManager.notify(NotificationHelper.NOTIFICATION_ID_TIMER, notification)
             }
@@ -158,6 +186,7 @@ class TimerForegroundService : Service() {
         eventObservationJob = engine.events.onEach { event ->
             when (event) {
                 is TimerEvent.PhaseCompleted -> {
+                    TimerEngineHolder.statsRepo.flush()
                     if (OledoroApp.settingsManager.autoBrightenOnFinish.value) {
                         OledoroApp.settingsManager.setDimmingActive(false)
                     }

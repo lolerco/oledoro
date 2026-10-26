@@ -21,30 +21,63 @@ class AndroidStudyStatsRepository(context: Context) {
     private val _updateTrigger = MutableStateFlow(0L)
     val updateTrigger: StateFlow<Long> = _updateTrigger.asStateFlow()
 
+    private var hasUnsavedChanges = false
+    private var lastFlushTimeMs: Long = System.currentTimeMillis()
+    private val inMemoryFocus = mutableMapOf<String, Long>()
+    private val inMemoryBreak = mutableMapOf<String, Long>()
+
+    init {
+        for ((key, value) in prefs.all) {
+            if (value is Long) {
+                if (key.endsWith("_focus")) {
+                    val date = key.substringBeforeLast("_")
+                    inMemoryFocus[date] = value
+                } else if (key.endsWith("_break")) {
+                    val date = key.substringBeforeLast("_")
+                    inMemoryBreak[date] = value
+                }
+            }
+        }
+    }
+
+    @Synchronized
+    fun flush() {
+        if (!hasUnsavedChanges) return
+        val editor = prefs.edit()
+        for ((date, focus) in inMemoryFocus) {
+            editor.putLong("${date}_focus", focus)
+        }
+        for ((date, brk) in inMemoryBreak) {
+            editor.putLong("${date}_break", brk)
+        }
+        editor.apply()
+        hasUnsavedChanges = false
+        lastFlushTimeMs = System.currentTimeMillis()
+    }
+
     @Synchronized
     fun recordTime(focusDeltaMs: Long, breakDeltaMs: Long, date: String = LocalDate.now().toString()) {
         if (focusDeltaMs <= 0L && breakDeltaMs <= 0L) return
         
-        val focusKey = "${date}_focus"
-        val breakKey = "${date}_break"
+        val currentFocus = inMemoryFocus[date] ?: prefs.getLong("${date}_focus", 0L)
+        val currentBreak = inMemoryBreak[date] ?: prefs.getLong("${date}_break", 0L)
         
-        val currentFocus = prefs.getLong(focusKey, 0L)
-        val currentBreak = prefs.getLong(breakKey, 0L)
-        
-        prefs.edit()
-            .putLong(focusKey, currentFocus + focusDeltaMs)
-            .putLong(breakKey, currentBreak + breakDeltaMs)
-            .apply()
-            
+        inMemoryFocus[date] = currentFocus + focusDeltaMs
+        inMemoryBreak[date] = currentBreak + breakDeltaMs
+        hasUnsavedChanges = true
         _updateTrigger.value++
+
+        // Flush to SharedPreferences at most once every 5 minutes during active sessions
+        val now = System.currentTimeMillis()
+        if (now - lastFlushTimeMs >= 5 * 60 * 1000L) {
+            flush()
+        }
     }
 
     @Synchronized
     fun getDailyStats(date: String): DailyStudyStats {
-        val focusKey = "${date}_focus"
-        val breakKey = "${date}_break"
-        val focus = prefs.getLong(focusKey, 0L)
-        val brk = prefs.getLong(breakKey, 0L)
+        val focus = inMemoryFocus[date] ?: prefs.getLong("${date}_focus", 0L)
+        val brk = inMemoryBreak[date] ?: prefs.getLong("${date}_break", 0L)
         return DailyStudyStats(date = date, focusTimeMs = focus, breakTimeMs = brk)
     }
 
@@ -59,9 +92,9 @@ class AndroidStudyStatsRepository(context: Context) {
 
     @Synchronized
     fun getAllTrackedDays(): List<DailyStudyStats> {
-        val dates = prefs.all.keys
+        val dates = (prefs.all.keys
             .filter { it.endsWith("_focus") || it.endsWith("_break") }
-            .map { it.substringBeforeLast("_") }
+            .map { it.substringBeforeLast("_") } + inMemoryFocus.keys + inMemoryBreak.keys)
             .distinct()
             .sorted()
         val stats = dates.map { getDailyStats(it) }.filter { it.focusTimeMs > 0L || it.breakTimeMs > 0L }
