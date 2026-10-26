@@ -264,9 +264,10 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager, statsRepo: Des
                 @Suppress("UNUSED_VARIABLE")
                 val trigger = statsRepo.updateTrigger
                 com.lolerco.oledoro.ui.components.StudyStatsDialog(
-                    dailyStats = statsRepo.getRecentDays(7),
+                    dailyStats = statsRepo.getAllTrackedDays(),
                     focusColor = settings.themeColor.color,
                     breakColor = settings.breakColor.color,
+                    accentColor = settings.themeColor.color,
                     onDismiss = { statsDialogVisible = false }
                 )
             }

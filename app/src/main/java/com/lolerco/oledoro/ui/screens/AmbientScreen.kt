@@ -353,9 +353,10 @@ fun AmbientScreen(
         // Study Stats Dialog Modal
         if (statsDialogVisible) {
             com.lolerco.oledoro.ui.components.StudyStatsDialog(
-                dailyStats = statsRepo.getRecentDays(7),
+                dailyStats = statsRepo.getAllTrackedDays(),
                 focusColor = themeColor.color,
                 breakColor = breakColor.color,
+                accentColor = themeColor.color,
                 onDismiss = { statsDialogVisible = false }
             )
         }
