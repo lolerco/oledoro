@@ -12,6 +12,7 @@ import androidx.core.app.ServiceCompat
 import com.lolerco.oledoro.OledoroApp
 import com.lolerco.oledoro.domain.TimerEngine
 import com.lolerco.oledoro.domain.TimerEvent
+import com.lolerco.oledoro.domain.TimerPhase
 import com.lolerco.oledoro.domain.TimerState
 import com.lolerco.oledoro.domain.TimerStatus
 import com.lolerco.oledoro.ui.TimerEngineHolder
