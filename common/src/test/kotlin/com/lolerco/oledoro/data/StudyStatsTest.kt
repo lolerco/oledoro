@@ -28,6 +28,7 @@ class StudyStatsTest {
             assertEquals(15000L, recorded.breakTimeMs)
 
             // Re-instantiate repo from the same file to confirm persistence
+            repo.flush()
             val repo2 = DesktopStudyStatsRepository(tempFile)
             val reloaded = repo2.getDailyStats(date)
             assertEquals(90000L, reloaded.focusTimeMs)

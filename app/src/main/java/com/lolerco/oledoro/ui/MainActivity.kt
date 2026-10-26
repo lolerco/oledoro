@@ -311,4 +311,14 @@ class MainActivity : ComponentActivity() {
             } catch (_: Exception) {}
         }
     }
+
+    override fun onStop() {
+        super.onStop()
+        TimerEngineHolder.statsRepo.flush()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        TimerEngineHolder.statsRepo.flush()
+    }
 }

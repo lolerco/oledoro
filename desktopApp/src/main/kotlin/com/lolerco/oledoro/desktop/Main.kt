@@ -52,6 +52,7 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager, statsRepo: Des
         engine.events.onEach { event ->
             when (event) {
                 is TimerEvent.PhaseCompleted -> {
+                    statsRepo.flush()
                     val phaseName = event.phase.displayName
                     val nextPhaseName = when (event.phase) {
                         TimerPhase.FOCUS -> "Break"
