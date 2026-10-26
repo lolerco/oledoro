@@ -18,7 +18,8 @@ class TimerEngine(
     var longBreakDurationMs: Long = DEFAULT_LONG_BREAK_DURATION_MS,
     var totalRounds: Int = DEFAULT_TOTAL_ROUNDS,
     private val coroutineScope: CoroutineScope? = null,
-    initialState: TimerState? = null
+    initialState: TimerState? = null,
+    var onTimeAccumulated: ((focusDeltaMs: Long, breakDeltaMs: Long) -> Unit)? = null
 ) {
     companion object {
         const val DEFAULT_FOCUS_DURATION_MS = 25 * 60 * 1000L
@@ -246,8 +247,14 @@ class TimerEngine(
 
         // Accumulate time for the current phase
         when (current.phase) {
-            TimerPhase.FOCUS -> _totalFocusTimeMs += deltaMs
-            TimerPhase.SHORT_BREAK, TimerPhase.LONG_BREAK -> _totalBreakTimeMs += deltaMs
+            TimerPhase.FOCUS -> {
+                _totalFocusTimeMs += deltaMs
+                onTimeAccumulated?.invoke(deltaMs, 0L)
+            }
+            TimerPhase.SHORT_BREAK, TimerPhase.LONG_BREAK -> {
+                _totalBreakTimeMs += deltaMs
+                onTimeAccumulated?.invoke(0L, deltaMs)
+            }
         }
 
         _state.value = current.copy(

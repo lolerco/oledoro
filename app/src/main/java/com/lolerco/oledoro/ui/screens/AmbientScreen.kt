@@ -101,9 +101,11 @@ fun AmbientScreen(
     // Anti-burn-in displacement offset
     val burnInOffset by rememberBurnInShift(enabled = enableBurnInShift)
 
-    // Controls and Settings visibility states
+    // Controls, Settings and Study Stats visibility states
     var controlsVisible by remember { mutableStateOf(false) }
     var settingsDialogVisible by remember { mutableStateOf(false) }
+    var statsDialogVisible by remember { mutableStateOf(false) }
+    val statsRepo = remember { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
 
     val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
     val isBreak = state.phase == TimerPhase.SHORT_BREAK || state.phase == TimerPhase.LONG_BREAK
@@ -279,17 +281,33 @@ fun AmbientScreen(
             }
         }
 
-        // Total time counters at bottom (vertically stacked)
+        // Total time counters at bottom inside an ascii-like box
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .burnInShift(burnInOffset)
-                .padding(bottom = 40.dp)
+                .padding(bottom = 30.dp)
+                .clickable {
+                    HapticHelper.performClick(context)
+                    statsDialogVisible = true
+                }
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier
+                    .border(1.dp, AmbientDimGray, RoundedCornerShape(4.dp))
+                    .background(Color(0xFF0C0C0C), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
+                Text(
+                    text = "[ your stats ]",
+                    color = themeColor.color,
+                    fontFamily = JetBrainsMono,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "total focus time: ${formatTime(state.totalFocusTimeMs)}",
                     color = AmbientCoolGray,
@@ -329,6 +347,16 @@ fun AmbientScreen(
                 autoBrightenOnFinish = autoBrightenOnFinish,
                 onAutoBrightenOnFinishChange = onAutoBrightenOnFinishChange,
                 onDismiss = { settingsDialogVisible = false }
+            )
+        }
+
+        // Study Stats Dialog Modal
+        if (statsDialogVisible) {
+            com.lolerco.oledoro.ui.components.StudyStatsDialog(
+                dailyStats = statsRepo.getRecentDays(7),
+                focusColor = themeColor.color,
+                breakColor = breakColor.color,
+                onDismiss = { statsDialogVisible = false }
             )
         }
     }

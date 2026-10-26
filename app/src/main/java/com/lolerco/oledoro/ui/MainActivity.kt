@@ -41,11 +41,15 @@ import kotlinx.coroutines.flow.onEach
 object TimerEngineHolder {
     val engine: TimerEngine by lazy {
         val sm = OledoroApp.settingsManager
+        val statsRepo = com.lolerco.oledoro.data.AndroidStudyStatsRepository(OledoroApp.instance)
         TimerEngine(
             focusDurationMs = sm.focusMinutes.value.coerceIn(1, 90) * 60 * 1000L,
             shortBreakDurationMs = sm.shortBreakMinutes.value.coerceIn(1, 30) * 60 * 1000L,
             longBreakDurationMs = sm.longBreakMinutes.value.coerceIn(1, 60) * 60 * 1000L,
-            totalRounds = sm.longBreakInterval.value.coerceIn(1, 10)
+            totalRounds = sm.longBreakInterval.value.coerceIn(1, 10),
+            onTimeAccumulated = { focusDelta, breakDelta ->
+                statsRepo.recordTime(focusDelta, breakDelta)
+            }
         )
     }
 }

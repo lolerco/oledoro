@@ -2,7 +2,15 @@
 
 All notable changes to oledoro will be documented in this file.
 
-## [1.4.0] - 2026-10-22
+## [1.6.0] - 2026-10-24
+
+### Added - Study Statistics & Daily Activity Tracking
+- **Daily Study Stats Persistence**: Automatically records focus and break time per day across sessions.
+- **ASCII "your stats" Trigger Box**: Minimalist ASCII-bordered box around bottom statistics that opens study analytics on click.
+- **Activity Bar Chart Modal**: Graphical comparison bars for focus vs. break time across recent days.
+- **Settings Changelog Section**: Added expandable "see changelog" section at the bottom of settings.
+
+## [1.5.0] - 2026-10-22
 
 ### Added
 - **Fast-Forward / Skip**: Fast-forward button in `ControlsRow` to skip the current phase and auto-start the next timer interval.
@@ -21,10 +29,19 @@ All notable changes to oledoro will be documented in this file.
 - **Android Task Dismissal**: Implemented `onTaskRemoved()` and `START_NOT_STICKY` in `TimerForegroundService` so killing the app from the Android Recents / Overview task switcher stops the service and dismisses ongoing notifications.
 - **Desktop Headless Fallback**: Handled headless environments gracefully in Desktop `Main.kt`.
 
-## [1.3.0] - 2026-10-19
+## [1.4.0] - 2026-10-19
 
-### Added
-- In-app numpad input fields for entering duration settings directly.
+### Added - Numpad Input & Layout Polish
+- **Numpad duration picker**: Dedicated numeric keypad for precise minute entry replacing standard sliders.
+- **Desktop stability**: Portable JVM handling and headless execution fallback.
+- **Module reorganization**: Relocated desktop module to `desktopApp/`.
+
+## [1.3.0] - 2026-10-10
+
+### Added - Theme Customization & Sound Notifications
+- **Independent color customization**: Dedicated Gruvbox color pickers for main theme, break mode, and negative overtime.
+- **Notification improvements**: System tray and audio alerts on phase completion.
+- **Refactored package structure**: Standardized to `com.lolerco.oledoro`.
 
 ## [1.2.0] - 2026-10-01
 

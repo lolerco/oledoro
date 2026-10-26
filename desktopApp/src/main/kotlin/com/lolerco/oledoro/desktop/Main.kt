@@ -1,7 +1,10 @@
 package com.lolerco.oledoro.desktop
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -19,6 +22,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.lolerco.oledoro.data.AppSettingsManager
+import com.lolerco.oledoro.data.DesktopStudyStatsRepository
 import com.lolerco.oledoro.data.GruvboxColor
 import com.lolerco.oledoro.domain.*
 import com.lolerco.oledoro.ui.components.*
@@ -30,10 +34,18 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
+fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager, statsRepo: DesktopStudyStatsRepository = remember { DesktopStudyStatsRepository() }) {
     val timerState by engine.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var settingsDialogVisible by remember { mutableStateOf(false) }
+    var statsDialogVisible by remember { mutableStateOf(false) }
+
+    // Sync engine time accumulation to stats repo
+    LaunchedEffect(engine, statsRepo) {
+        engine.onTimeAccumulated = { focusDelta, breakDelta ->
+            statsRepo.recordTime(focusDelta, breakDelta)
+        }
+    }
 
     // Observe timer events for notifications
     LaunchedEffect(engine) {
@@ -157,16 +169,32 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                 )
             }
 
-            // Total time counters at bottom
+            // Total time counters at bottom inside an ascii-like box
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 40.dp)
+                    .padding(bottom = 30.dp)
+                    .clickable {
+                        HapticHelper.performClick(null)
+                        statsDialogVisible = true
+                    }
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier
+                        .border(1.dp, AmbientDimGray, RoundedCornerShape(4.dp))
+                        .background(Color(0xFF0C0C0C), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
+                    Text(
+                        text = "[ your stats ]",
+                        color = settings.themeColor.color,
+                        fontFamily = JetBrainsMono,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "total focus time: ${formatTime(engine.totalFocusTimeMs)} · total break time: ${formatTime(engine.totalBreakTimeMs)}",
                         color = AmbientCoolGray,
@@ -227,6 +255,19 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager) {
                         )
                     },
                     onDismiss = { settingsDialogVisible = false }
+                )
+            }
+
+            // Study Stats Dialog Modal
+            if (statsDialogVisible) {
+                // Read stats from statsRepo (trigger ensures update when time recorded)
+                @Suppress("UNUSED_VARIABLE")
+                val trigger = statsRepo.updateTrigger
+                com.lolerco.oledoro.ui.components.StudyStatsDialog(
+                    dailyStats = statsRepo.getRecentDays(7),
+                    focusColor = settings.themeColor.color,
+                    breakColor = settings.breakColor.color,
+                    onDismiss = { statsDialogVisible = false }
                 )
             }
         }

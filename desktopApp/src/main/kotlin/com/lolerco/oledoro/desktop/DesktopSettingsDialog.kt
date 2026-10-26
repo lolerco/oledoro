@@ -244,7 +244,7 @@ fun DesktopSettingsDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "minimalist, battery-saving pomodoro for oled displays - for linux.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.0",
+                            text = "minimalist, battery-saving pomodoro for oled displays - for linux.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.6",
                             fontFamily = JetBrainsMono,
                             fontSize = 11.sp,
                             color = AmbientCoolGray,
@@ -252,6 +252,14 @@ fun DesktopSettingsDialog(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Changelog Section
+                com.lolerco.oledoro.ui.components.ChangelogSection(
+                    themeColor = selectedThemeColor.color,
+                    context = context
+                )
             }
         }
     }
