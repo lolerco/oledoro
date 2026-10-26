@@ -124,22 +124,23 @@ fun StudyStatsDialog(
         max(60_000L, maxVal).toFloat()
     }
 
-    val animatedMaxMs by animateFloatAsState(
-        targetValue = targetMaxMs,
-        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
-        label = "graph_max"
-    )
+    // Direct normalized fractions animate smoothly from 0f..1f without numerator/denominator divergence
+    val targetFractions = remember(trackedDays, selectedMetric, targetMaxMs) {
+        trackedDays.map { stat ->
+            val rawMs = when (selectedMetric) {
+                StatsMetric.FOCUS -> stat.focusTimeMs
+                StatsMetric.BREAK -> stat.breakTimeMs
+                StatsMetric.TOTAL -> stat.totalTimeMs
+            }
+            (rawMs.toFloat() / targetMaxMs).coerceIn(0f, 1f)
+        }
+    }
 
-    val animatedValues = trackedDays.map { stat ->
-        val target = when (selectedMetric) {
-            StatsMetric.FOCUS -> stat.focusTimeMs
-            StatsMetric.BREAK -> stat.breakTimeMs
-            StatsMetric.TOTAL -> stat.totalTimeMs
-        }.toFloat()
+    val animatedFractions = targetFractions.mapIndexed { idx, frac ->
         animateFloatAsState(
-            targetValue = target,
-            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
-            label = "point_${stat.date}"
+            targetValue = frac,
+            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+            label = "point_frac_${trackedDays[idx].date}"
         ).value
     }
 
@@ -154,6 +155,71 @@ fun StudyStatsDialog(
     }
 
     val averageMs = if (trackedDays.isNotEmpty()) currentTotalMs / trackedDays.size else 0L
+
+    // Cache pre-measured text layouts so textMeasurer is NEVER called per frame in Canvas
+    val dateLayouts = remember(trackedDays) {
+        trackedDays.map { stat ->
+            textMeasurer.measure(
+                text = formatShortDate(stat.date),
+                style = TextStyle(
+                    fontFamily = JetBrainsMono,
+                    fontSize = 8.sp,
+                    color = AmbientDimGray
+                )
+            )
+        }
+    }
+
+    val dateLayoutsSelected = remember(trackedDays) {
+        trackedDays.map { stat ->
+            textMeasurer.measure(
+                text = formatShortDate(stat.date),
+                style = TextStyle(
+                    fontFamily = JetBrainsMono,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            )
+        }
+    }
+
+    val valueLayouts = remember(trackedDays, selectedMetric) {
+        trackedDays.map { stat ->
+            val rawMs = when (selectedMetric) {
+                StatsMetric.FOCUS -> stat.focusTimeMs
+                StatsMetric.BREAK -> stat.breakTimeMs
+                StatsMetric.TOTAL -> stat.totalTimeMs
+            }
+            textMeasurer.measure(
+                text = formatMinutesOrHours(rawMs),
+                style = TextStyle(
+                    fontFamily = JetBrainsMono,
+                    fontSize = 8.sp,
+                    color = AmbientCoolGray
+                )
+            )
+        }
+    }
+
+    val valueLayoutsSelected = remember(trackedDays, selectedMetric, targetColor) {
+        trackedDays.map { stat ->
+            val rawMs = when (selectedMetric) {
+                StatsMetric.FOCUS -> stat.focusTimeMs
+                StatsMetric.BREAK -> stat.breakTimeMs
+                StatsMetric.TOTAL -> stat.totalTimeMs
+            }
+            textMeasurer.measure(
+                text = formatMinutesOrHours(rawMs),
+                style = TextStyle(
+                    fontFamily = JetBrainsMono,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = targetColor
+                )
+            )
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -306,7 +372,7 @@ fun StudyStatsDialog(
                     }
 
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        // Y-axis labels column
+                        // Y-axis labels column with target max
                         Column(
                             modifier = Modifier
                                 .height(180.dp)
@@ -315,13 +381,13 @@ fun StudyStatsDialog(
                             horizontalAlignment = Alignment.End
                         ) {
                             Text(
-                                text = formatMinutesOrHours(animatedMaxMs.toLong()),
+                                text = formatMinutesOrHours(targetMaxMs.toLong()),
                                 fontFamily = JetBrainsMono,
                                 fontSize = 8.sp,
                                 color = AmbientDimGray
                             )
                             Text(
-                                text = formatMinutesOrHours((animatedMaxMs / 2).toLong()),
+                                text = formatMinutesOrHours((targetMaxMs / 2).toLong()),
                                 fontFamily = JetBrainsMono,
                                 fontSize = 8.sp,
                                 color = AmbientDimGray
@@ -344,7 +410,7 @@ fun StudyStatsDialog(
                                 modifier = Modifier
                                     .width(minCanvasWidth)
                                     .height(180.dp)
-                                    .pointerInput(trackedDays, animatedValues) {
+                                    .pointerInput(trackedDays, animatedFractions) {
                                         detectTapGestures { offset ->
                                             val count = trackedDays.size
                                             if (count > 0) {
@@ -393,7 +459,7 @@ fun StudyStatsDialog(
                                         } else {
                                             paddingLeft + i.toFloat() * (availableWidth / (count - 1))
                                         }
-                                        val frac = (animatedValues[i] / animatedMaxMs).coerceIn(0f, 1f)
+                                        val frac = animatedFractions[i]
                                         val y = paddingTop + (1f - frac) * graphHeight
                                         points.add(Offset(x, y))
                                     }
@@ -470,42 +536,38 @@ fun StudyStatsDialog(
                                         )
 
                                         // Draw value label above point
-                                        val valueStr = formatMinutesOrHours(animatedValues[i].toLong())
-                                        val valueLayout = textMeasurer.measure(
-                                            text = valueStr,
-                                            style = TextStyle(
-                                                fontFamily = JetBrainsMono,
-                                                fontSize = 8.sp,
-                                                fontWeight = if (isPointSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isPointSelected) animatedColor else AmbientCoolGray
+                                        val valueLayout = if (isPointSelected && i in valueLayoutsSelected.indices) {
+                                            valueLayoutsSelected[i]
+                                        } else if (i in valueLayouts.indices) {
+                                            valueLayouts[i]
+                                        } else null
+
+                                        if (valueLayout != null) {
+                                            drawText(
+                                                textLayoutResult = valueLayout,
+                                                topLeft = Offset(
+                                                    x = pt.x - (valueLayout.size.width / 2f),
+                                                    y = pt.y - 14.dp.toPx()
+                                                )
                                             )
-                                        )
-                                        drawText(
-                                            textLayoutResult = valueLayout,
-                                            topLeft = Offset(
-                                                x = pt.x - (valueLayout.size.width / 2f),
-                                                y = pt.y - 14.dp.toPx()
-                                            )
-                                        )
+                                        }
 
                                         // Draw date label below baseline
-                                        val dateStr = formatShortDate(trackedDays[i].date)
-                                        val dateLayout = textMeasurer.measure(
-                                            text = dateStr,
-                                            style = TextStyle(
-                                                fontFamily = JetBrainsMono,
-                                                fontSize = 8.sp,
-                                                fontWeight = if (isPointSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isPointSelected) Color.White else AmbientDimGray
+                                        val dateLayout = if (isPointSelected && i in dateLayoutsSelected.indices) {
+                                            dateLayoutsSelected[i]
+                                        } else if (i in dateLayouts.indices) {
+                                            dateLayouts[i]
+                                        } else null
+
+                                        if (dateLayout != null) {
+                                            drawText(
+                                                textLayoutResult = dateLayout,
+                                                topLeft = Offset(
+                                                    x = pt.x - (dateLayout.size.width / 2f),
+                                                    y = baselineY + 6.dp.toPx()
+                                                )
                                             )
-                                        )
-                                        drawText(
-                                            textLayoutResult = dateLayout,
-                                            topLeft = Offset(
-                                                x = pt.x - (dateLayout.size.width / 2f),
-                                                y = baselineY + 6.dp.toPx()
-                                            )
-                                        )
+                                        }
                                     }
                                 }
                             }
