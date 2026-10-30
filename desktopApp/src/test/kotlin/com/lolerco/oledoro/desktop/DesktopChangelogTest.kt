@@ -10,7 +10,7 @@ class DesktopChangelogTest {
     @Test
     fun desktopModule_canAccessChangelogProvider() {
         assertTrue(ChangelogProvider.entries.isNotEmpty())
-        assertEquals("1.6.0", ChangelogProvider.latestVersion)
+        assertEquals("1.7.0", ChangelogProvider.latestVersion)
     }
 
     @Test

@@ -9,6 +9,16 @@ data class ChangelogEntry(
 object ChangelogProvider {
     val entries: List<ChangelogEntry> = listOf(
         ChangelogEntry(
+            version = "1.7.0",
+            date = "2026-10-30",
+            highlights = listOf(
+                "Slide-up study stats sheet with rounded card corners and auto-brighten",
+                "Always-visible timer action controls without tap-to-toggle",
+                "Accurate sleep duration tracking and background AlarmManager completion wakeup",
+                "Minimalist 'oledoro' branding in top action bar"
+            )
+        ),
+        ChangelogEntry(
             version = "1.6.0",
             date = "2026-10-24",
             highlights = listOf(

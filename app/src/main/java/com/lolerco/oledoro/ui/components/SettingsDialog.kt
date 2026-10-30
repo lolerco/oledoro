@@ -336,7 +336,7 @@ fun SettingsDialog(
                 ) {
                     Column {
                         Text(
-                            text = "oledoro v1.6.0",
+                            text = "oledoro v1.7.0",
                             fontFamily = JetBrainsMono,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
@@ -344,7 +344,7 @@ fun SettingsDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.6",
+                            text = "minimalist, battery-saving pomodoro for oled displays.\n\nfont: jetbrains nerd font mono\npalette: gruvbox\ncreated by: lolerco\nversion 1.7",
                             fontFamily = JetBrainsMono,
                             fontSize = 11.sp,
                             color = AmbientCoolGray,

@@ -132,7 +132,7 @@ fun AmbientScreen(
             .fillMaxSize()
             .background(OledBlack)
     ) {
-        // Top Action Bar (Lightbulb toggle & Gear Settings)
+        // Top Action Bar (Lightbulb toggle, Brand Title & Gear Settings)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -163,6 +163,14 @@ fun AmbientScreen(
                     )
                 }
             }
+
+            Text(
+                text = "oledoro",
+                color = AmbientCoolGray,
+                fontFamily = JetBrainsMono,
+                fontSize = 11.sp,
+                letterSpacing = 1.sp
+            )
 
             // Gear button: opens SettingsDialog
             IconButton(
