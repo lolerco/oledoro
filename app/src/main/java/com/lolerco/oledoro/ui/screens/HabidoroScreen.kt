@@ -257,7 +257,7 @@ fun HabidoroScreen(
 
         // Habit Stats Bottom Sheet
         if (sheetState.isVisible && selectedHabitForStats != null) {
-            val currentHabit = habits.find { it.id == selectedHabitForStats?.id } ?: selectedHabitForStats!=
+            val currentHabit = habits.find { it.id == selectedHabitForStats?.id } ?: selectedHabitForStats!!
             HabitStatsBottomSheet(
                 sheetState = sheetState,
                 habit = currentHabit,
