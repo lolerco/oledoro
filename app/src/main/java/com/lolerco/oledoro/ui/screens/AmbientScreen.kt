@@ -1,23 +1,32 @@
 package com.lolerco.oledoro.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
@@ -34,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +61,7 @@ import com.lolerco.oledoro.ui.ambient.rememberBurnInShift
 import com.lolerco.oledoro.ui.components.ControlsRow
 import com.lolerco.oledoro.ui.components.NextPhasePreview
 import com.lolerco.oledoro.ui.components.SettingsDialog
+import com.lolerco.oledoro.ui.components.StudyStatsSheet
 import com.lolerco.oledoro.ui.components.TimerDisplay
 import com.lolerco.oledoro.ui.theme.AmbientCoolGray
 import com.lolerco.oledoro.ui.theme.AmbientDimGray
@@ -105,7 +116,7 @@ fun AmbientScreen(
     val context = LocalContext.current
     var controlsVisible by remember { mutableStateOf(false) }
     var settingsDialogVisible by remember { mutableStateOf(false) }
-    var statsDialogVisible by remember { mutableStateOf(false) }
+    var statsSheetVisible by remember { mutableStateOf(false) }
     val statsRepo = remember(context) { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
 
     val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
@@ -280,15 +291,51 @@ fun AmbientScreen(
             }
         }
 
+        // Bottom gesture area to catch upward slide from the bottom of the screen
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(100.dp)
+                .pointerInput(Unit) {
+                    var accumulatedDragY = 0f
+                    detectVerticalDragGestures(
+                        onDragStart = { accumulatedDragY = 0f },
+                        onDragEnd = { accumulatedDragY = 0f },
+                        onDragCancel = { accumulatedDragY = 0f },
+                        onVerticalDrag = { change, dragAmount ->
+                            accumulatedDragY += dragAmount
+                            if (accumulatedDragY < -20f && !statsSheetVisible) {
+                                change.consume()
+                                HapticHelper.performClick(context)
+                                statsSheetVisible = true
+                            }
+                        }
+                    )
+                }
+        )
+
         // Total time counters at bottom inside an ascii-like box
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .burnInShift(burnInOffset)
                 .padding(bottom = 30.dp)
-                .clickable {
-                    HapticHelper.performClick(context)
-                    statsDialogVisible = true
+                .pointerInput(Unit) {
+                    var accumulatedDragY = 0f
+                    detectVerticalDragGestures(
+                        onDragStart = { accumulatedDragY = 0f },
+                        onDragEnd = { accumulatedDragY = 0f },
+                        onDragCancel = { accumulatedDragY = 0f },
+                        onVerticalDrag = { change, dragAmount ->
+                            accumulatedDragY += dragAmount
+                            if (accumulatedDragY < -20f && !statsSheetVisible) {
+                                change.consume()
+                                HapticHelper.performClick(context)
+                                statsSheetVisible = true
+                            }
+                        }
+                    )
                 }
         ) {
             Column(
@@ -298,6 +345,14 @@ fun AmbientScreen(
                     .background(Color(0xFF0C0C0C), RoundedCornerShape(4.dp))
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
+                // Subtle slide-up affordance
+                Box(
+                    modifier = Modifier
+                        .width(20.dp)
+                        .height(2.dp)
+                        .background(AmbientDimGray.copy(alpha = 0.6f), RoundedCornerShape(1.dp))
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "[ your stats ]",
                     color = themeColor.color,
@@ -349,15 +404,62 @@ fun AmbientScreen(
             )
         }
 
-        // Study Stats Dialog Modal
-        if (statsDialogVisible) {
-            com.lolerco.oledoro.ui.components.StudyStatsDialog(
-                dailyStats = statsRepo.getAllTrackedDays(),
-                focusColor = themeColor.color,
-                breakColor = breakColor.color,
-                accentColor = themeColor.color,
-                onDismiss = { statsDialogVisible = false }
+        // Back handler to dismiss stats sheet
+        BackHandler(enabled = statsSheetVisible) {
+            statsSheetVisible = false
+        }
+
+        // Scrim backdrop behind sheet
+        AnimatedVisibility(
+            visible = statsSheetVisible,
+            enter = fadeIn(animationSpec = tween(durationMillis = 200)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 200))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.65f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        statsSheetVisible = false
+                    }
             )
+        }
+
+        // Study Stats Sheet sliding from the bottom upwards
+        AnimatedVisibility(
+            visible = statsSheetVisible,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = slideInVertically(
+                initialOffsetY = { fullHeight -> fullHeight },
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            ),
+            exit = slideOutVertically(
+                targetOffsetY = { fullHeight -> fullHeight },
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.85f)
+            ) {
+                StudyStatsSheet(
+                    dailyStats = statsRepo.getAllTrackedDays(),
+                    focusColor = themeColor.color,
+                    breakColor = breakColor.color,
+                    accentColor = themeColor.color,
+                    onDismiss = { statsSheetVisible = false }
+                )
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,6 +92,93 @@ fun StudyStatsDialog(
     breakColor: Color,
     accentColor: Color = focusColor,
     onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = OledBlack),
+            border = androidx.compose.foundation.BorderStroke(1.dp, AmbientDimGray)
+        ) {
+            StudyStatsContent(
+                dailyStats = dailyStats,
+                focusColor = focusColor,
+                breakColor = breakColor,
+                accentColor = accentColor,
+                onDismiss = onDismiss
+            )
+        }
+    }
+}
+
+@Composable
+fun StudyStatsSheet(
+    dailyStats: List<DailyStudyStats>,
+    focusColor: Color,
+    breakColor: Color,
+    accentColor: Color = focusColor,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                var dragY = 0f
+                detectVerticalDragGestures(
+                    onDragStart = { dragY = 0f },
+                    onDragEnd = { dragY = 0f },
+                    onDragCancel = { dragY = 0f },
+                    onVerticalDrag = { change, dragAmount ->
+                        dragY += dragAmount
+                        if (dragY > 25f) {
+                            change.consume()
+                            onDismiss()
+                        }
+                    }
+                )
+            },
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = OledBlack),
+        border = androidx.compose.foundation.BorderStroke(1.dp, AmbientDimGray)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Drag handle at top
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp, bottom = 2.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .background(AmbientDimGray, RoundedCornerShape(2.dp))
+                )
+            }
+
+            StudyStatsContent(
+                dailyStats = dailyStats,
+                focusColor = focusColor,
+                breakColor = breakColor,
+                accentColor = accentColor,
+                onDismiss = onDismiss
+            )
+        }
+    }
+}
+
+@Composable
+fun StudyStatsContent(
+    dailyStats: List<DailyStudyStats>,
+    focusColor: Color,
+    breakColor: Color,
+    accentColor: Color = focusColor,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var selectedMetric by remember { mutableStateOf(StatsMetric.FOCUS) }
     var selectedPointIndex by remember { mutableStateOf<Int?>(null) }
@@ -221,21 +309,12 @@ fun StudyStatsDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = OledBlack),
-            border = androidx.compose.foundation.BorderStroke(1.dp, AmbientDimGray)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp)
-                    .verticalScroll(scrollState)
-            ) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(18.dp)
+            .verticalScroll(scrollState)
+    ) {
                 // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -667,6 +746,5 @@ fun StudyStatsDialog(
                     }
                 }
             }
-        }
     }
-}
+
