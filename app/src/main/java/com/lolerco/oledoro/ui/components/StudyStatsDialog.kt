@@ -140,7 +140,7 @@ fun StudyStatsSheet(
                     }
                 )
             },
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = OledBlack),
         border = androidx.compose.foundation.BorderStroke(1.dp, AmbientDimGray)
     ) {

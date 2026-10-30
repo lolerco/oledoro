@@ -103,9 +103,10 @@ fun AmbientScreen(
     modifier: Modifier = Modifier,
     enableBurnInShift: Boolean = true
 ) {
-    // Window management: dynamic screenBrightness based on lightbulb toggle and slider
+    // Window management: dynamic screenBrightness based on lightbulb toggle and slider.
+    // Lights up automatically when the stats screen is opened, and resumes previous dimness when closed.
     AmbientModeEffect(
-        dimmingEnabled = isDimmingActive,
+        dimmingEnabled = isDimmingActive && !statsSheetVisible,
         dimPercentage = dimPercentage
     )
 
@@ -451,6 +452,7 @@ fun AmbientScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
+                    .padding(start = 12.dp, end = 12.dp, bottom = 16.dp)
             ) {
                 StudyStatsSheet(
                     dailyStats = statsRepo.getAllTrackedDays(),
