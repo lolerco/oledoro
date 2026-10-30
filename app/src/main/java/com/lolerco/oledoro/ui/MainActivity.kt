@@ -20,7 +20,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.lolerco.oledoro.OledoroApp
-import com.lolerco.oledoro.data.AppSettingsManager
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import com.lolerco.oledoro.data.AndroidHabitRepository
+import com.lolerco.oledoro.habits.Habit
+import com.lolerco.oledoro.ui.screens.HabidoroScreen
 import com.lolerco.oledoro.data.GruvboxColor
 import com.lolerco.oledoro.domain.TimerEngine
 import com.lolerco.oledoro.domain.TimerEvent
