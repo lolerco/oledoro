@@ -431,4 +431,41 @@ class TimerEngineTest {
         assertEquals(2000L, engine.state.value.remainingMs)
         assertEquals(1000L, engine.totalBreakTimeMs)
     }
+
+    @Test
+    fun `large elapsed delta accounts for sleep duration and correctly enters overtime`() = runTest {
+        val engine = TimerEngine(shortBreakDurationMs = 5 * 60 * 1000L)
+        val events = mutableListOf<TimerEvent>()
+        val collectJob = launch(UnconfinedTestDispatcher()) {
+            engine.events.toList(events)
+        }
+
+        // Skip to short break and start
+        engine.nextPhase(autoStart = true)
+        assertEquals(TimerPhase.SHORT_BREAK, engine.state.value.phase)
+        assertEquals(5 * 60 * 1000L, engine.state.value.remainingMs)
+
+        // Simulate 10 minutes (600,000ms) elapsed while device was asleep
+        engine.tick(10 * 60 * 1000L)
+
+        // Break duration was 5m, so 10m elapsed puts it at -5m (-300,000ms) in overtime
+        assertEquals(-5 * 60 * 1000L, engine.state.value.remainingMs)
+        assertEquals(TimerStatus.OVERTIME, engine.state.value.status)
+        assertTrue(engine.state.value.isOvertime)
+        assertEquals(10 * 60 * 1000L, engine.totalBreakTimeMs)
+        assertEquals(1, events.size)
+        assertEquals(TimerEvent.PhaseCompleted(TimerPhase.SHORT_BREAK), events.first())
+
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `syncTime correctly applies delta without double-counting`() {
+        val engine = TimerEngine(focusDurationMs = 10_000L)
+        engine.start()
+        Thread.sleep(50L)
+        val delta = engine.syncTime()
+        assertTrue("Delta should be >= 50ms, was $delta", delta >= 40L)
+        assertEquals(10_000L - delta, engine.state.value.remainingMs)
+    }
 }

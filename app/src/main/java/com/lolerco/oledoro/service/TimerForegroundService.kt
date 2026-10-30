@@ -1,6 +1,8 @@
 package com.lolerco.oledoro.service
 
+import android.app.AlarmManager
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -62,12 +64,16 @@ class TimerForegroundService : Service() {
                 startForegroundWithNotification(engine.state.value)
             }
             ACTION_SYNC -> {
+                engine.syncTime()
                 if (isForeground) {
                     val notification = notificationHelper.buildTimerNotification(engine.state.value)
                     notificationManager.notify(NotificationHelper.NOTIFICATION_ID_TIMER, notification)
                 } else {
                     startForegroundWithNotification(engine.state.value)
                 }
+            }
+            ACTION_TIMER_EXPIRED -> {
+                engine.syncTime()
             }
             NotificationHelper.ACTION_NOTIFICATION_PAUSE -> {
                 engine.pause()
@@ -111,6 +117,7 @@ class TimerForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        cancelCompletionAlarm()
         TimerEngineHolder.statsRepo.flush()
         isForeground = false
         stateObservationJob?.cancel()
@@ -149,11 +156,27 @@ class TimerForegroundService : Service() {
     private var lastNotifiedStatus: TimerStatus? = null
     private var lastNotifiedIsOvertime: Boolean? = null
     private var lastNotificationPostTimeMs: Long = 0L
+    private var lastScheduledAlarmEpochMs: Long = 0L
 
     private fun observeTimerState() {
         stateObservationJob?.cancel()
         stateObservationJob = engine.state.onEach { state ->
             if (!isForeground) return@onEach
+
+            // Manage AlarmManager wakeup so the completion alert fires accurately
+            // without keeping the CPU awake or draining battery during sleep.
+            if (state.status == TimerStatus.RUNNING && state.remainingMs > 0L) {
+                val targetEpochMs = System.currentTimeMillis() + state.remainingMs
+                if (kotlin.math.abs(targetEpochMs - lastScheduledAlarmEpochMs) > 2000L) {
+                    lastScheduledAlarmEpochMs = targetEpochMs
+                    scheduleCompletionAlarm(state.remainingMs)
+                }
+            } else {
+                if (lastScheduledAlarmEpochMs != 0L) {
+                    lastScheduledAlarmEpochMs = 0L
+                    cancelCompletionAlarm()
+                }
+            }
 
             val statusChanged = state.status != lastNotifiedStatus
             val phaseChanged = state.phase != lastNotifiedPhase
@@ -199,6 +222,7 @@ class TimerForegroundService : Service() {
     }
 
     private fun stopForegroundService() {
+        cancelCompletionAlarm()
         isForeground = false
         stateObservationJob?.cancel()
         eventObservationJob?.cancel()
@@ -215,10 +239,71 @@ class TimerForegroundService : Service() {
         stopSelf()
     }
 
+    private fun scheduleCompletionAlarm(remainingMs: Long) {
+        if (remainingMs <= 0L) {
+            cancelCompletionAlarm()
+            return
+        }
+        val triggerAtMillis = System.currentTimeMillis() + remainingMs
+        val intent = Intent(this, TimerForegroundService::class.java).apply {
+            action = ACTION_TIMER_EXPIRED
+        }
+        val pendingIntent = PendingIntent.getService(
+            this,
+            NotificationHelper.REQUEST_CODE_ALARM,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (alarmManager.canScheduleExactAlarms()) {
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                    } else {
+                        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                    }
+                } else {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                }
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+            }
+        } catch (_: SecurityException) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                } else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                }
+            } catch (_: Exception) {}
+        } catch (_: Exception) {}
+    }
+
+    private fun cancelCompletionAlarm() {
+        val intent = Intent(this, TimerForegroundService::class.java).apply {
+            action = ACTION_TIMER_EXPIRED
+        }
+        val pendingIntent = PendingIntent.getService(
+            this,
+            NotificationHelper.REQUEST_CODE_ALARM,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        ) ?: return
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        try {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+        } catch (_: Exception) {}
+    }
+
     companion object {
         const val ACTION_START_SERVICE = "com.lolerco.oledoro.action.START_SERVICE"
         const val ACTION_SYNC = "com.lolerco.oledoro.action.SYNC"
         const val ACTION_STOP_SERVICE = "com.lolerco.oledoro.action.STOP_SERVICE"
+        const val ACTION_TIMER_EXPIRED = "com.lolerco.oledoro.action.TIMER_EXPIRED"
 
         fun startService(context: Context, action: String = ACTION_START_SERVICE) {
             val intent = Intent(context, TimerForegroundService::class.java).apply {

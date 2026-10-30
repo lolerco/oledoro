@@ -67,9 +67,31 @@ class TimerEngine(
     private var lastTickTime: Long = 0L
 
     @Synchronized
+    fun syncTime(): Long {
+        val current = _state.value
+        if (current.status != TimerStatus.RUNNING && current.status != TimerStatus.OVERTIME) {
+            return 0L
+        }
+        val now = System.currentTimeMillis()
+        if (lastTickTime <= 0L) {
+            lastTickTime = now
+            return 0L
+        }
+        val delta = (now - lastTickTime).coerceAtLeast(0L)
+        if (delta > 0L) {
+            lastTickTime = now
+            tick(delta)
+        }
+        return delta
+    }
+
+    @Synchronized
     fun start() {
         val current = _state.value
         if (current.status == TimerStatus.RUNNING || current.status == TimerStatus.OVERTIME) {
+            activeScope?.let { scope ->
+                ensureTickerRunning(scope)
+            }
             return
         }
         val newStatus = if (current.remainingMs <= 0L) TimerStatus.OVERTIME else TimerStatus.RUNNING
@@ -89,10 +111,7 @@ class TimerEngine(
             tickerJob = scope.launch {
                 while (isActive) {
                     delay(tickIntervalMs)
-                    val now = System.currentTimeMillis()
-                    val delta = if (lastTickTime > 0L) (now - lastTickTime).coerceAtLeast(0L) else tickIntervalMs
-                    lastTickTime = now
-                    tick(delta)
+                    syncTime()
                 }
             }
         }
@@ -102,7 +121,8 @@ class TimerEngine(
     fun pause() {
         val current = _state.value
         if (current.status == TimerStatus.RUNNING || current.status == TimerStatus.OVERTIME) {
-            _state.value = current.copy(status = TimerStatus.PAUSED)
+            syncTime()
+            _state.value = _state.value.copy(status = TimerStatus.PAUSED)
             lastTickTime = 0L
             tickerJob?.cancel()
             tickerJob = null
@@ -212,9 +232,14 @@ class TimerEngine(
         }
 
         if (autoStart) {
+            lastTickTime = System.currentTimeMillis()
             activeScope?.let { scope ->
                 ensureTickerRunning(scope)
             }
+        } else {
+            lastTickTime = 0L
+            tickerJob?.cancel()
+            tickerJob = null
         }
     }
 
@@ -288,20 +313,18 @@ class TimerEngine(
     }
 
     fun startTicker(coroutineScope: CoroutineScope, tickIntervalMs: Long = 1000L): Job {
-        this.activeScope = coroutineScope
-        start()
-        tickerJob?.cancel()
-        val job = coroutineScope.launch {
-            while (isActive) {
-                delay(tickIntervalMs)
-                tick(tickIntervalMs)
-            }
+        if (this.activeScope != coroutineScope || tickerJob?.isActive != true) {
+            tickerJob?.cancel()
+            tickerJob = null
+            this.activeScope = coroutineScope
         }
-        tickerJob = job
-        return job
+        start()
+        ensureTickerRunning(coroutineScope, tickIntervalMs)
+        return tickerJob ?: coroutineScope.launch { }
     }
 
     fun stopTicker() {
+        lastTickTime = 0L
         tickerJob?.cancel()
         tickerJob = null
     }

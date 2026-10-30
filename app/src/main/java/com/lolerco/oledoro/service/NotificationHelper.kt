@@ -24,6 +24,7 @@ class NotificationHelper(private val context: Context) {
         const val REQUEST_CODE_RESUME = 102
         const val REQUEST_CODE_NEXT = 103
         const val REQUEST_CODE_RESET = 104
+        const val REQUEST_CODE_ALARM = 105
 
         const val ACTION_NOTIFICATION_PAUSE = "com.lolerco.oledoro.action.NOTIFICATION_PAUSE"
         const val ACTION_NOTIFICATION_RESUME = "com.lolerco.oledoro.action.NOTIFICATION_RESUME"
