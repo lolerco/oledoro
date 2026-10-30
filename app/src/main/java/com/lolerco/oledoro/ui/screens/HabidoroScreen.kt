@@ -47,8 +47,9 @@ import androidx.compose.ui.unit.sp
 import com.lolerco.oledoro.data.GruvboxColor
 import com.lolerco.oledoro.habits.Habit
 import com.lolerco.oledoro.habits.HabitStreakCalculator
-import com.lolerco.oledoro.ui.ambient.AmbientController
-import com.lolerco.oledoro.ui.ambient.AmbientController.burnInShift
+import com.lolerco.oledoro.ui.ambient.AmbientModeEffect
+import com.lolerco.oledoro.ui.ambient.burnInShift
+import com.lolerco.oledoro.ui.ambient.rememberBurnInShift
 import com.lolerco.oledoro.ui.components.AddHabitDialog
 import com.lolerco.oledoro.ui.components.HabitRow
 import com.lolerco.oledoro.ui.components.HabitStatsBottomSheet
@@ -88,12 +89,12 @@ fun HabidoroScreen(
     // When the stats bottom sheet is open, temporarily illuminate screen
     val effectiveDimming = if (sheetState.isVisible) false else isDimmingActive
 
-    AmbientController.AmbientModeEffect(
-        isDimmed = effectiveDimming,
+    AmbientModeEffect(
+        isDimmingActive = effectiveDimming,
         dimPercentage = dimPercentage
     )
 
-    val burnInOffset by AmbientController.rememberBurnInShift()
+    val burnInOffset = rememberBurnInShift()
 
     // Global overview stats across all habits for bottom summary card
     val totalActiveStreak = remember(habits) {
