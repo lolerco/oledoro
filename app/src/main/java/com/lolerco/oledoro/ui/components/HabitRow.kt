@@ -75,7 +75,7 @@ fun HabitRow(
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp,
-                color = if (stats.currentStreak > 0) habit.color.composeColor else AmbientDimGray
+                color = if (stats.currentStreak > 0) habit.color.color else AmbientDimGray
             )
             Text(
                 text = "days",
@@ -109,7 +109,7 @@ fun HabitRow(
             pastWeek.forEach { day ->
                 PastWeekDayItem(
                     day = day,
-                    accentColor = habit.color.composeColor,
+                    accentColor = habit.color.color,
                     onToggle = { onToggleDay(day.dateString) }
                 )
             }

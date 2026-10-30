@@ -79,7 +79,6 @@ fun HabidoroScreen(
     onDeleteHabit: (habitId: String) -> Unit
 ) {
     val context = LocalContext.current
-    val view = LocalView.current
     val scope = rememberCoroutineScope()
     val today = remember { LocalDate.now() }
 

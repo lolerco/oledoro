@@ -87,9 +87,9 @@ fun AddHabitDialog(
                         color = Color.White
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = selectedColor.composeColor,
+                        focusedBorderColor = selectedColor.color,
                         unfocusedBorderColor = AmbientDimGray,
-                        cursorColor = selectedColor.composeColor
+                        cursorColor = selectedColor.color
                     ),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -116,7 +116,7 @@ fun AddHabitDialog(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(color.composeColor)
+                                .background(color.color)
                                 .border(
                                     width = if (isSelected) 2.5.dp else 0.dp,
                                     color = if (isSelected) Color.White else Color.Transparent,
@@ -141,7 +141,7 @@ fun AddHabitDialog(
                     text = "CREATE",
                     fontFamily = JetBrainsMono,
                     fontWeight = FontWeight.Bold,
-                    color = if (habitName.isNotBlank()) selectedColor.composeColor else AmbientDimGray
+                    color = if (habitName.isNotBlank()) selectedColor.color else AmbientDimGray
                 )
             }
         },

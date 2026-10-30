@@ -106,7 +106,7 @@ fun HabitStatsBottomSheet(
                         fontFamily = JetBrainsMono,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = habit.color.composeColor
+                        color = habit.color.color
                     )
                     Text(
                         text = "HABIT STATISTICS & STREAKS",
@@ -136,13 +136,13 @@ fun HabitStatsBottomSheet(
                     modifier = Modifier.weight(1f),
                     label = "CURRENT STREAK",
                     value = "${stats.currentStreak} d",
-                    accentColor = habit.color.composeColor
+                    accentColor = habit.color.color
                 )
                 HabitMetricCard(
                     modifier = Modifier.weight(1f),
                     label = "BEST STREAK",
                     value = "${stats.bestStreak} d",
-                    accentColor = habit.color.composeColor
+                    accentColor = habit.color.color
                 )
             }
 
@@ -163,13 +163,13 @@ fun HabitStatsBottomSheet(
                     modifier = Modifier.weight(1f),
                     label = "7-DAY RATE",
                     value = "${stats.weeklyRatePercent}%",
-                    accentColor = habit.color.composeColor
+                    accentColor = habit.color.color
                 )
                 HabitMetricCard(
                     modifier = Modifier.weight(1f),
                     label = "30-DAY RATE",
                     value = "${stats.monthlyRatePercent}%",
-                    accentColor = habit.color.composeColor
+                    accentColor = habit.color.color
                 )
             }
 
@@ -194,7 +194,7 @@ fun HabitStatsBottomSheet(
                 past30Days.forEach { day ->
                     HistoryDayDot(
                         day = day,
-                        accentColor = habit.color.composeColor
+                        accentColor = habit.color.color
                     )
                 }
             }
