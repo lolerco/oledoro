@@ -113,9 +113,8 @@ fun AmbientScreen(
     // Anti-burn-in displacement offset
     val burnInOffset by rememberBurnInShift(enabled = enableBurnInShift)
 
-    // Controls, Settings and Study Stats visibility states
+    // Settings and Study Stats visibility states
     val context = LocalContext.current
-    var controlsVisible by remember { mutableStateOf(false) }
     var settingsDialogVisible by remember { mutableStateOf(false) }
     var statsSheetVisible by remember { mutableStateOf(false) }
     val statsRepo = remember(context) { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
@@ -132,12 +131,6 @@ fun AmbientScreen(
         modifier = modifier
             .fillMaxSize()
             .background(OledBlack)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) {
-                controlsVisible = !controlsVisible
-            }
     ) {
         // Top Action Bar (Lightbulb toggle & Gear Settings)
         Row(
@@ -230,7 +223,7 @@ fun AmbientScreen(
             )
         }
 
-        // 2. Action Controls: Positioned below the timer block
+        // 2. Action Controls: Positioned below the timer block (always visible)
         // Decoupled from the Timer Column so the timer NEVER shifts.
         Box(
             modifier = Modifier
@@ -238,21 +231,15 @@ fun AmbientScreen(
                 .burnInShift(burnInOffset)
                 .offset(y = 150.dp)
         ) {
-            AnimatedVisibility(
-                visible = controlsVisible,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                ControlsRow(
-                    status = state.status,
-                    onStart = onStart,
-                    onPause = onPause,
-                    onFastForward = onFastForward,
-                    onSkip = onSkip,
-                    onReset = onReset,
-                    tint = AmbientCoolGray
-                )
-            }
+            ControlsRow(
+                status = state.status,
+                onStart = onStart,
+                onPause = onPause,
+                onFastForward = onFastForward,
+                onSkip = onSkip,
+                onReset = onReset,
+                tint = AmbientCoolGray
+            )
         }
 
         // Notification permission banner (unobtrusive hint at bottom of screen)
