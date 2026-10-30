@@ -90,11 +90,11 @@ fun HabidoroScreen(
     val effectiveDimming = if (sheetState.isVisible) false else isDimmingActive
 
     AmbientModeEffect(
-        isDimmingActive = effectiveDimming,
+        dimmingEnabled = effectiveDimming,
         dimPercentage = dimPercentage
     )
 
-    val burnInOffset = rememberBurnInShift()
+    val burnInOffset by rememberBurnInShift()
 
     // Global overview stats across all habits for bottom summary card
     val totalActiveStreak = remember(habits) {

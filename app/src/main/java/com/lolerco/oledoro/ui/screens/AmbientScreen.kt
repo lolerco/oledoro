@@ -103,6 +103,12 @@ fun AmbientScreen(
     modifier: Modifier = Modifier,
     enableBurnInShift: Boolean = true
 ) {
+    // Settings and Study Stats visibility states
+    val context = LocalContext.current
+    var settingsDialogVisible by remember { mutableStateOf(false) }
+    var statsSheetVisible by remember { mutableStateOf(false) }
+    val statsRepo = remember(context) { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
+
     // Window management: dynamic screenBrightness based on lightbulb toggle and slider.
     // Lights up automatically when the stats screen is opened, and resumes previous dimness when closed.
     AmbientModeEffect(
@@ -112,12 +118,6 @@ fun AmbientScreen(
 
     // Anti-burn-in displacement offset
     val burnInOffset by rememberBurnInShift(enabled = enableBurnInShift)
-
-    // Settings and Study Stats visibility states
-    val context = LocalContext.current
-    var settingsDialogVisible by remember { mutableStateOf(false) }
-    var statsSheetVisible by remember { mutableStateOf(false) }
-    val statsRepo = remember(context) { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
 
     val isOvertime = state.isOvertime || state.status == TimerStatus.OVERTIME
     val isBreak = state.phase == TimerPhase.SHORT_BREAK || state.phase == TimerPhase.LONG_BREAK
