@@ -167,6 +167,11 @@ class MainViewModel : ViewModel() {
         settingsManager.setAutoBrightenOnFinish(enabled)
     }
 
+    fun addHabit(name: String, color: GruvboxColor) = habitRepository.addHabit(name, color)
+    fun deleteHabit(habitId: String) = habitRepository.deleteHabit(habitId)
+    fun toggleHabitCompletion(habitId: String, dateString: String) = habitRepository.toggleHabitCompletion(habitId, dateString)
+    fun flushHabits() = habitRepository.flush()
+
     private fun syncEngineDurations() {
         engine.updateDurations(
             focusMinutes = settingsManager.focusMinutes.value,
