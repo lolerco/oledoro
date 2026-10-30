@@ -1,6 +1,5 @@
 package com.lolerco.oledoro.ui.screens
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,22 +41,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lolerco.oledoro.data.GruvboxColor
 import com.lolerco.oledoro.habits.Habit
 import com.lolerco.oledoro.habits.HabitStreakCalculator
-import com.lolerco.oledoro.ui.ambient.AmbientDimLayer
+import com.lolerco.oledoro.ui.ambient.AmbientModeEffect
+import com.lolerco.oledoro.ui.ambient.burnInShift
+import com.lolerco.oledoro.ui.ambient.rememberBurnInShift
 import com.lolerco.oledoro.ui.components.AddHabitDialog
-import com.lolerco.oledoro.ui.components.BurnInProtectionBox
 import com.lolerco.oledoro.ui.components.HabitRow
 import com.lolerco.oledoro.ui.components.HabitStatsBottomSheet
 import com.lolerco.oledoro.ui.theme.AmbientCoolGray
 import com.lolerco.oledoro.ui.theme.AmbientDimGray
 import com.lolerco.oledoro.ui.theme.JetBrainsMono
-import com.lolerco.oledoro.util.HapticHelper
+import com.lolerco.oledoro.ui.utils.HapticHelper
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -91,21 +90,12 @@ fun HabidoroScreen(
     // When the stats bottom sheet is open, temporarily illuminate screen
     val effectiveDimming = if (sheetState.isVisible) false else isDimmingActive
 
-    LaunchedEffect(effectiveDimming) {
-        val window = (view.context as? Activity)?.window ?: return@LaunchedEffect
-        val params = window.attributes
-        params.screenBrightness = if (effectiveDimming) 0.01f else -1f
-        window.attributes = params
-    }
+    AmbientModeEffect(
+        isDimmingActive = effectiveDimming,
+        dimPercentage = dimPercentage
+    )
 
-    DisposableEffect(Unit) {
-        onDispose {
-            val window = (view.context as? Activity)?.window ?: return@onDispose
-            val params = window.attributes
-            params.screenBrightness = -1f
-            window.attributes = params
-        }
-    }
+    val burnInOffset = rememberBurnInShift()
 
     // Global overview stats across all habits for bottom summary card
     val totalActiveStreak = remember(habits) {
@@ -120,12 +110,11 @@ fun HabidoroScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        BurnInProtectionBox(
-            modifier = Modifier.fillMaxSize()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .burnInShift(burnInOffset)
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
                 // Top Action Bar with "habidoro" title
                 Row(
                     modifier = Modifier
@@ -225,7 +214,6 @@ fun HabidoroScreen(
                     }
                 }
             }
-        }
 
         // Bottom summary & swipe-up trigger
         Box(
@@ -284,12 +272,6 @@ fun HabidoroScreen(
                 }
             )
         }
-
-        // Dimming layer on top
-        AmbientDimLayer(
-            isDimmingActive = effectiveDimming,
-            dimPercentage = dimPercentage
-        )
 
         // Add Habit Dialog
         if (showAddDialog) {
