@@ -66,6 +66,7 @@ object TimerEngineHolder {
 class MainViewModel : ViewModel() {
     private val engine: TimerEngine = TimerEngineHolder.engine
     private val settingsManager: AppSettingsManager = OledoroApp.settingsManager
+    private val habitRepository = AndroidHabitRepository(OledoroApp.instance)
 
     val timerState: StateFlow<TimerState> = engine.state
     val themeColor: StateFlow<GruvboxColor> = settingsManager.themeColor
@@ -78,6 +79,7 @@ class MainViewModel : ViewModel() {
     val longBreakMinutes: StateFlow<Int> = settingsManager.longBreakMinutes
     val longBreakInterval: StateFlow<Int> = settingsManager.longBreakInterval
     val autoBrightenOnFinish: StateFlow<Boolean> = settingsManager.autoBrightenOnFinish
+    val habits: StateFlow<List<Habit>> = habitRepository.habits
 
     init {
         engine.events.onEach { event ->
@@ -217,52 +219,82 @@ class MainActivity : ComponentActivity() {
                 val longBreakMinutes by viewModel.longBreakMinutes.collectAsStateWithLifecycle()
                 val longBreakInterval by viewModel.longBreakInterval.collectAsStateWithLifecycle()
                 val autoBrightenOnFinish by viewModel.autoBrightenOnFinish.collectAsStateWithLifecycle()
+                val habits by viewModel.habits.collectAsStateWithLifecycle()
 
-                AmbientScreen(
-                    state = timerState,
-                    themeColor = themeColor,
-                    breakColor = breakColor,
-                    negativeColor = negativeColor,
-                    isDimmingActive = isDimmingActive,
-                    dimPercentage = dimPercentage,
-                    focusMinutes = focusMinutes,
-                    shortBreakMinutes = shortBreakMinutes,
-                    longBreakMinutes = longBreakMinutes,
-                    longBreakInterval = longBreakInterval,
-                    autoBrightenOnFinish = autoBrightenOnFinish,
-                    hasNotificationPermission = hasNotificationPermission,
-                    onRequestNotificationPermission = { openNotificationSettingsOrRequestPermission() },
-                    onToggleDimming = { viewModel.toggleDimming() },
-                    onThemeColorChange = { viewModel.setThemeColor(it) },
-                    onBreakColorChange = { viewModel.setBreakColor(it) },
-                    onNegativeColorChange = { viewModel.setNegativeColor(it) },
-                    onDimPercentageChange = { viewModel.setDimPercentage(it) },
-                    onFocusMinutesChange = { viewModel.setFocusMinutes(it) },
-                    onShortBreakMinutesChange = { viewModel.setShortBreakMinutes(it) },
-                    onLongBreakMinutesChange = { viewModel.setLongBreakMinutes(it) },
-                    onLongBreakIntervalChange = { viewModel.setLongBreakInterval(it) },
-                    onAutoBrightenOnFinishChange = { viewModel.setAutoBrightenOnFinish(it) },
-                    onStart = {
-                        viewModel.start()
-                        TimerForegroundService.startService(this, TimerForegroundService.ACTION_START_SERVICE)
-                    },
-                    onPause = {
-                        viewModel.pause()
-                        TimerForegroundService.startService(this, TimerForegroundService.ACTION_SYNC)
-                    },
-                    onFastForward = {
-                        viewModel.fastForward()
-                        TimerForegroundService.startService(this, TimerForegroundService.ACTION_START_SERVICE)
-                    },
-                    onSkip = {
-                        viewModel.skip()
-                        TimerForegroundService.startService(this, TimerForegroundService.ACTION_SYNC)
-                    },
-                    onReset = {
-                        viewModel.reset()
-                        TimerForegroundService.startService(this, TimerForegroundService.ACTION_SYNC)
+                val pagerState = rememberPagerState(pageCount = { 2 })
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    when (page) {
+                        0 -> {
+                            AmbientScreen(
+                                state = timerState,
+                                themeColor = themeColor,
+                                breakColor = breakColor,
+                                negativeColor = negativeColor,
+                                isDimmingActive = isDimmingActive,
+                                dimPercentage = dimPercentage,
+                                focusMinutes = focusMinutes,
+                                shortBreakMinutes = shortBreakMinutes,
+                                longBreakMinutes = longBreakMinutes,
+                                longBreakInterval = longBreakInterval,
+                                autoBrightenOnFinish = autoBrightenOnFinish,
+                                hasNotificationPermission = hasNotificationPermission,
+                                onRequestNotificationPermission = { openNotificationSettingsOrRequestPermission() },
+                                onToggleDimming = { viewModel.toggleDimming() },
+                                onThemeColorChange = { viewModel.setThemeColor(it) },
+                                onBreakColorChange = { viewModel.setBreakColor(it) },
+                                onNegativeColorChange = { viewModel.setNegativeColor(it) },
+                                onDimPercentageChange = { viewModel.setDimPercentage(it) },
+                                onFocusMinutesChange = { viewModel.setFocusMinutes(it) },
+                                onShortBreakMinutesChange = { viewModel.setShortBreakMinutes(it) },
+                                onLongBreakMinutesChange = { viewModel.setLongBreakMinutes(it) },
+                                onLongBreakIntervalChange = { viewModel.setLongBreakInterval(it) },
+                                onAutoBrightenOnFinishChange = { viewModel.setAutoBrightenOnFinish(it) },
+                                onStart = {
+                                    viewModel.start()
+                                    TimerForegroundService.startService(this@MainActivity, TimerForegroundService.ACTION_START_SERVICE)
+                                },
+                                onPause = {
+                                    viewModel.pause()
+                                    TimerForegroundService.startService(this@MainActivity, TimerForegroundService.ACTION_SYNC)
+                                },
+                                onFastForward = {
+                                    viewModel.fastForward()
+                                    TimerForegroundService.startService(this@MainActivity, TimerForegroundService.ACTION_START_SERVICE)
+                                },
+                                onSkip = {
+                                    viewModel.skip()
+                                    TimerForegroundService.startService(this@MainActivity, TimerForegroundService.ACTION_SYNC)
+                                },
+                                onReset = {
+                                    viewModel.reset()
+                                    TimerForegroundService.startService(this@MainActivity, TimerForegroundService.ACTION_SYNC)
+                                }
+                            )
+                        }
+                        1 -> {
+                            HabidoroScreen(
+                                habits = habits,
+                                themeColor = themeColor,
+                                isDimmingActive = isDimmingActive,
+                                dimPercentage = dimPercentage,
+                                onToggleDimming = { viewModel.toggleDimming() },
+                                onToggleHabitCompletion = { habitId, dateStr ->
+                                    viewModel.toggleHabitCompletion(habitId, dateStr)
+                                },
+                                onAddHabit = { name, color ->
+                                    viewModel.addHabit(name, color)
+                                },
+                                onDeleteHabit = { habitId ->
+                                    viewModel.deleteHabit(habitId)
+                                }
+                            )
+                        }
                     }
-                )
+                }
             }
         }
     }
@@ -322,10 +354,12 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         TimerEngineHolder.statsRepo.flush()
+        viewModel.flushHabits()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         TimerEngineHolder.statsRepo.flush()
+        viewModel.flushHabits()
     }
 }
