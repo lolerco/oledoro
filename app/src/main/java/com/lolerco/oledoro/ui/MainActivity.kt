@@ -35,6 +35,7 @@ import com.lolerco.oledoro.domain.TimerState
 import com.lolerco.oledoro.domain.TimerStatus
 import com.lolerco.oledoro.service.TimerForegroundService
 import com.lolerco.oledoro.ui.ambient.AmbientController
+import com.lolerco.oledoro.ui.ambient.AmbientModeEffect
 import com.lolerco.oledoro.ui.screens.AmbientScreen
 import com.lolerco.oledoro.ui.theme.OledPomodoroTheme
 import kotlinx.coroutines.flow.StateFlow
