@@ -57,11 +57,11 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HabitStatsBottomSheet(
-    sheetState: SheetState,
     habit: Habit,
     today: LocalDate = LocalDate.now(),
     onDeleteHabit: (String) -> Unit,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
     val stats = remember(habit.completedDates, today) {
         HabitStreakCalculator.calculateStats(habit, today)

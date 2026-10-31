@@ -82,12 +82,12 @@ fun HabidoroScreen(
     val scope = rememberCoroutineScope()
     val today = remember { LocalDate.now() }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var statsSheetVisible by remember { mutableStateOf(false) }
     var selectedHabitForStats by remember { mutableStateOf<Habit?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
     // When the stats bottom sheet is open, temporarily illuminate screen
-    val effectiveDimming = if (sheetState.isVisible) false else isDimmingActive
+    val effectiveDimming = if (statsSheetVisible) false else isDimmingActive
 
     AmbientModeEffect(
         dimmingEnabled = effectiveDimming,
@@ -206,7 +206,7 @@ fun HabidoroScreen(
                                 onSelectHabitForStats = {
                                     HapticHelper.performClick(context)
                                     selectedHabitForStats = habit
-                                    scope.launch { sheetState.show() }
+                                    statsSheetVisible = true
                                 }
                             )
                         }
@@ -228,7 +228,7 @@ fun HabidoroScreen(
                     if (selectedHabitForStats == null && habits.isNotEmpty()) {
                         selectedHabitForStats = habits.first()
                     }
-                    scope.launch { sheetState.show() }
+                    statsSheetVisible = true
                 }
                 .padding(bottom = 20.dp, top = 12.dp),
             contentAlignment = Alignment.Center
@@ -256,18 +256,19 @@ fun HabidoroScreen(
         }
 
         // Habit Stats Bottom Sheet
-        if (sheetState.isVisible && selectedHabitForStats != null) {
+        if (statsSheetVisible && selectedHabitForStats != null) {
             val currentHabit = habits.find { it.id == selectedHabitForStats?.id } ?: selectedHabitForStats!!
             HabitStatsBottomSheet(
-                sheetState = sheetState,
                 habit = currentHabit,
                 today = today,
                 onDeleteHabit = { habitId ->
                     onDeleteHabit(habitId)
-                    scope.launch { sheetState.hide() }
+                    statsSheetVisible = false
+                    selectedHabitForStats = null
                 },
                 onDismissRequest = {
-                    scope.launch { sheetState.hide() }
+                    statsSheetVisible = false
+                    selectedHabitForStats = null
                 }
             )
         }
