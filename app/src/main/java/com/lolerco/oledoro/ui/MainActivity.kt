@@ -227,6 +227,12 @@ class MainActivity : ComponentActivity() {
                 val autoBrightenOnFinish by viewModel.autoBrightenOnFinish.collectAsStateWithLifecycle()
                 val habits by viewModel.habits.collectAsStateWithLifecycle()
 
+                // Top-level AmbientModeEffect to prevent competing window manipulations across pager pages
+                AmbientModeEffect(
+                    dimmingEnabled = isDimmingActive,
+                    dimPercentage = dimPercentage
+                )
+
                 val pagerState = rememberPagerState(pageCount = { 2 })
 
                 HorizontalPager(

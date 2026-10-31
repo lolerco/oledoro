@@ -109,13 +109,6 @@ fun AmbientScreen(
     var statsSheetVisible by remember { mutableStateOf(false) }
     val statsRepo = remember(context) { com.lolerco.oledoro.data.AndroidStudyStatsRepository(context) }
 
-    // Window management: dynamic screenBrightness based on lightbulb toggle and slider.
-    // Lights up automatically when the stats screen is opened, and resumes previous dimness when closed.
-    AmbientModeEffect(
-        dimmingEnabled = isDimmingActive && !statsSheetVisible,
-        dimPercentage = dimPercentage
-    )
-
     // Anti-burn-in displacement offset
     val burnInOffset by rememberBurnInShift(enabled = enableBurnInShift)
 

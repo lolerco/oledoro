@@ -86,14 +86,6 @@ fun HabidoroScreen(
     var selectedHabitForStats by remember { mutableStateOf<Habit?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // When the stats bottom sheet is open, temporarily illuminate screen
-    val effectiveDimming = if (statsSheetVisible) false else isDimmingActive
-
-    AmbientModeEffect(
-        dimmingEnabled = effectiveDimming,
-        dimPercentage = dimPercentage
-    )
-
     val burnInOffset by rememberBurnInShift()
 
     // Global overview stats across all habits for bottom summary card
