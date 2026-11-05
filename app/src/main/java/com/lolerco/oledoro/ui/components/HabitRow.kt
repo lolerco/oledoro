@@ -38,7 +38,7 @@ import java.time.LocalDate
 
 /**
  * A single habit row mirroring Loop Habit Tracker (uhabits):
- * [Streak on Left] -> [Habit Name Center] -> [Past 7-day checks on Right]
+ * [Streak on Left] -> [Habit Name Center] -> [Past 4-day checks on Right]
  */
 @Composable
 fun HabitRow(
@@ -47,11 +47,11 @@ fun HabitRow(
     onToggleDay: (dateString: String) -> Unit,
     onSelectHabitForStats: () -> Unit
 ) {
-    val stats = remember(habit.completedDates, today) {
+    val stats = remember(habit.completedDates, habit.skippedDates, today) {
         HabitStreakCalculator.calculateStats(habit, today)
     }
-    val pastWeek = remember(habit.completedDates, today) {
-        HabitStreakCalculator.getPastWeek(habit, today)
+    val past4Days = remember(habit.completedDates, habit.skippedDates, today) {
+        HabitStreakCalculator.getPast4Days(habit, today)
     }
 
     Row(
@@ -101,12 +101,12 @@ fun HabitRow(
                 .padding(end = 8.dp)
         )
 
-        // 3. STREAK OF THE PAST WEEK (7 days check circles/buttons on the right)
+        // 3. STREAK OF THE PAST 4 DAYS (compact checks on the right)
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            pastWeek.forEach { day ->
+            past4Days.forEach { day ->
                 PastWeekDayItem(
                     day = day,
                     accentColor = habit.color.color,
@@ -128,12 +128,17 @@ private fun PastWeekDayItem(
             .size(28.dp)
             .clip(CircleShape)
             .background(
-                if (day.isCompleted) accentColor else Color.Transparent
+                when {
+                    day.isCompleted -> accentColor
+                    day.isSkipped -> accentColor.copy(alpha = 0.25f)
+                    else -> Color.Transparent
+                }
             )
             .border(
                 width = if (day.isToday) 1.5.dp else 1.dp,
                 color = when {
                     day.isCompleted -> accentColor
+                    day.isSkipped -> accentColor
                     day.isToday -> AmbientCoolGray
                     else -> AmbientDimGray.copy(alpha = 0.4f)
                 },
@@ -149,6 +154,7 @@ private fun PastWeekDayItem(
             fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.Normal,
             color = when {
                 day.isCompleted -> Color.Black
+                day.isSkipped -> accentColor
                 day.isToday -> Color.White
                 else -> AmbientDimGray
             }

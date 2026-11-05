@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -71,9 +72,7 @@ import java.time.LocalDate
 fun HabidoroScreen(
     habits: List<Habit>,
     themeColor: GruvboxColor,
-    isDimmingActive: Boolean,
-    dimPercentage: Int,
-    onToggleDimming: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     onToggleHabitCompletion: (habitId: String, dateString: String) -> Unit,
     onAddHabit: (name: String, color: GruvboxColor) -> Unit,
     onDeleteHabit: (habitId: String) -> Unit
@@ -90,7 +89,7 @@ fun HabidoroScreen(
 
     // Global overview stats across all habits for bottom summary card
     val totalActiveStreak = remember(habits) {
-        habits.sumOf { HabitStreakCalculator.calculateCurrentStreak(it.completedDates, today) }
+        habits.sumOf { HabitStreakCalculator.calculateCurrentStreak(it.completedDates, it.skippedDates, today) }
     }
     val totalDoneToday = remember(habits) {
         habits.count { it.completedDates.contains(today.toString()) }
@@ -114,40 +113,7 @@ fun HabidoroScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Dimming toggle
-                    IconButton(
-                        onClick = {
-                            HapticHelper.performClick(context)
-                            onToggleDimming()
-                        }
-                    ) {
-                        if (!isDimmingActive) {
-                            Icon(
-                                imageVector = Icons.Filled.Lightbulb,
-                                contentDescription = "Bright Screen",
-                                tint = themeColor.color,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Outlined.Lightbulb,
-                                contentDescription = "Dim Screen",
-                                tint = AmbientDimGray,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    }
-
-                    // Top Title: "habidoro" matching oledoro styling
-                    Text(
-                        text = "habidoro",
-                        color = AmbientCoolGray,
-                        fontFamily = JetBrainsMono,
-                        fontSize = 11.sp,
-                        letterSpacing = 1.sp
-                    )
-
-                    // Add habit button in action bar
+                    // Add habit button in action bar (where lightbulb was)
                     IconButton(
                         onClick = {
                             HapticHelper.performClick(context)
@@ -159,6 +125,30 @@ fun HabidoroScreen(
                             contentDescription = "Add Habit",
                             tint = themeColor.color,
                             modifier = Modifier.size(26.dp)
+                        )
+                    }
+
+                    // Top Title: "habidoro" matching oledoro styling
+                    Text(
+                        text = "habidoro",
+                        color = AmbientCoolGray,
+                        fontFamily = JetBrainsMono,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp
+                    )
+
+                    // Settings button (in top right where + was)
+                    IconButton(
+                        onClick = {
+                            HapticHelper.performClick(context)
+                            onOpenSettings()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = themeColor.color,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

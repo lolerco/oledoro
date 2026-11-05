@@ -64,10 +64,10 @@ fun HabitStatsBottomSheet(
     onDismissRequest: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
-    val stats = remember(habit.completedDates, today) {
+    val stats = remember(habit.completedDates, habit.skippedDates, today) {
         HabitStreakCalculator.calculateStats(habit, today)
     }
-    val past30Days = remember(habit.completedDates, today) {
+    val past30Days = remember(habit.completedDates, habit.skippedDates, today) {
         HabitStreakCalculator.getPast30Days(habit, today)
     }
 
@@ -246,11 +246,20 @@ private fun HistoryDayDot(
             .size(24.dp)
             .clip(RoundedCornerShape(4.dp))
             .background(
-                if (day.isCompleted) accentColor else Color(0xFF161616)
+                when {
+                    day.isCompleted -> accentColor
+                    day.isSkipped -> accentColor.copy(alpha = 0.25f)
+                    else -> Color(0xFF161616)
+                }
             )
             .border(
                 width = if (day.isToday) 1.dp else 0.5.dp,
-                color = if (day.isToday) Color.White else AmbientDimGray.copy(alpha = 0.3f),
+                color = when {
+                    day.isCompleted -> accentColor
+                    day.isSkipped -> accentColor
+                    day.isToday -> Color.White
+                    else -> AmbientDimGray.copy(alpha = 0.3f)
+                },
                 shape = RoundedCornerShape(4.dp)
             ),
         contentAlignment = Alignment.Center
@@ -260,7 +269,11 @@ private fun HistoryDayDot(
             fontFamily = JetBrainsMono,
             fontSize = 9.sp,
             fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.Normal,
-            color = if (day.isCompleted) Color.Black else AmbientCoolGray.copy(alpha = 0.6f)
+            color = when {
+                day.isCompleted -> Color.Black
+                day.isSkipped -> accentColor
+                else -> AmbientCoolGray.copy(alpha = 0.6f)
+            }
         )
     }
 }
