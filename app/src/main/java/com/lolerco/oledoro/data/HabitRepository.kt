@@ -111,15 +111,30 @@ class AndroidHabitRepository(context: Context) {
         var nowCompleted = false
         val updated = _habits.value.map { habit ->
             if (habit.id == id) {
-                val currentDates = habit.completedDates.toMutableSet()
-                if (currentDates.contains(dateString)) {
-                    currentDates.remove(dateString)
-                    nowCompleted = false
-                } else {
-                    currentDates.add(dateString)
-                    nowCompleted = true
+                val currentCompleted = habit.completedDates.toMutableSet()
+                val currentSkipped = habit.skippedDates.toMutableSet()
+
+                // Cycle: OFF -> ON (completed) -> SKIPPED -> OFF
+                when {
+                    currentCompleted.contains(dateString) -> {
+                        // ON -> SKIPPED
+                        currentCompleted.remove(dateString)
+                        currentSkipped.add(dateString)
+                        nowCompleted = false
+                    }
+                    currentSkipped.contains(dateString) -> {
+                        // SKIPPED -> OFF
+                        currentSkipped.remove(dateString)
+                        nowCompleted = false
+                    }
+                    else -> {
+                        // OFF -> ON
+                        currentCompleted.add(dateString)
+                        currentSkipped.remove(dateString)
+                        nowCompleted = true
+                    }
                 }
-                habit.copy(completedDates = currentDates)
+                habit.copy(completedDates = currentCompleted, skippedDates = currentSkipped)
             } else {
                 habit
             }
@@ -152,6 +167,9 @@ class AndroidHabitRepository(context: Context) {
             val datesArray = JSONArray()
             habit.completedDates.forEach { datesArray.put(it) }
             put("completedDates", datesArray)
+            val skippedArray = JSONArray()
+            habit.skippedDates.forEach { skippedArray.put(it) }
+            put("skippedDates", skippedArray)
         }
     }
 
@@ -173,12 +191,20 @@ class AndroidHabitRepository(context: Context) {
                 dates.add(datesArr.getString(i))
             }
         }
+        val skipped = mutableSetOf<String>()
+        val skippedArr = obj.optJSONArray("skippedDates")
+        if (skippedArr != null) {
+            for (i in 0 until skippedArr.length()) {
+                skipped.add(skippedArr.getString(i))
+            }
+        }
         return Habit(
             id = id,
             name = name,
             color = color,
             createdAt = createdAt,
             completedDates = dates,
+            skippedDates = skipped,
             targetDaysPerWeek = targetDaysPerWeek
         )
     }
