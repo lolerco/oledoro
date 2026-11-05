@@ -250,43 +250,6 @@ fun AmbientScreen(
             )
         }
 
-        // Notification permission banner (unobtrusive hint at bottom of screen)
-        if (!hasNotificationPermission) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .burnInShift(burnInOffset)
-                    .padding(horizontal = 24.dp, vertical = 20.dp)
-                    .background(
-                        color = Color(0x33FABD2F),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = Color(0x66FABD2F),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        HapticHelper.performClick(context)
-                        onRequestNotificationPermission()
-                    }
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.notification_permission_banner),
-                    color = Color(0xFFFABD2F),
-                    fontFamily = JetBrainsMono,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
         // Bottom gesture area to catch upward slide from the bottom of the screen
         Box(
             modifier = Modifier
@@ -311,67 +274,109 @@ fun AmbientScreen(
                 }
         )
 
-        // Total time counters at bottom inside an ascii-like box
-        Box(
+        // Bottom container for notification banner and stats box
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .burnInShift(burnInOffset)
-                .padding(bottom = 30.dp)
-                .pointerInput(Unit) {
-                    var accumulatedDragY = 0f
-                    detectVerticalDragGestures(
-                        onDragStart = { accumulatedDragY = 0f },
-                        onDragEnd = { accumulatedDragY = 0f },
-                        onDragCancel = { accumulatedDragY = 0f },
-                        onVerticalDrag = { change, dragAmount ->
-                            accumulatedDragY += dragAmount
-                            if (accumulatedDragY < -20f && !statsSheetVisible) {
-                                change.consume()
-                                HapticHelper.performClick(context)
-                                statsSheetVisible = true
-                            }
-                        }
-                    )
-                }
+                .padding(bottom = 30.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .border(1.dp, AmbientDimGray, RoundedCornerShape(4.dp))
-                    .background(Color(0xFF0C0C0C), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            ) {
-                // Subtle slide-up affordance
+            // Notification permission banner (positioned above the stats box)
+            if (!hasNotificationPermission) {
                 Box(
                     modifier = Modifier
-                        .width(20.dp)
-                        .height(2.dp)
-                        .background(AmbientDimGray.copy(alpha = 0.6f), RoundedCornerShape(1.dp))
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "[ your stats ]",
-                    color = themeColor.color,
-                    fontFamily = JetBrainsMono,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 10.sp,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "total focus time: ${formatTime(state.totalFocusTimeMs)}",
-                    color = AmbientCoolGray,
-                    fontFamily = JetBrainsMono,
-                    fontSize = 11.sp,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = "total break time: ${formatTime(state.totalBreakTimeMs)}",
-                    color = AmbientCoolGray,
-                    fontFamily = JetBrainsMono,
-                    fontSize = 11.sp,
-                    letterSpacing = 1.sp
-                )
+                        .padding(horizontal = 24.dp)
+                        .background(
+                            color = Color(0x33FABD2F),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = Color(0x66FABD2F),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            HapticHelper.performClick(context)
+                            onRequestNotificationPermission()
+                        }
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.notification_permission_banner),
+                        color = Color(0xFFFABD2F),
+                        fontFamily = JetBrainsMono,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // Total time counters at bottom inside an ascii-like box
+            Box(
+                modifier = Modifier
+                    .pointerInput(Unit) {
+                        var accumulatedDragY = 0f
+                        detectVerticalDragGestures(
+                            onDragStart = { accumulatedDragY = 0f },
+                            onDragEnd = { accumulatedDragY = 0f },
+                            onDragCancel = { accumulatedDragY = 0f },
+                            onVerticalDrag = { change, dragAmount ->
+                                accumulatedDragY += dragAmount
+                                if (accumulatedDragY < -20f && !statsSheetVisible) {
+                                    change.consume()
+                                    HapticHelper.performClick(context)
+                                    statsSheetVisible = true
+                                }
+                            }
+                        )
+                    }
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .border(1.dp, AmbientDimGray, RoundedCornerShape(4.dp))
+                        .background(Color(0xFF0C0C0C), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    // Subtle slide-up affordance
+                    Box(
+                        modifier = Modifier
+                            .width(20.dp)
+                            .height(2.dp)
+                            .background(AmbientDimGray.copy(alpha = 0.6f), RoundedCornerShape(1.dp))
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "[ your stats ]",
+                        color = themeColor.color,
+                        fontFamily = JetBrainsMono,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "total focus time: ${formatTime(state.totalFocusTimeMs)}",
+                        color = AmbientCoolGray,
+                        fontFamily = JetBrainsMono,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "total break time: ${formatTime(state.totalBreakTimeMs)}",
+                        color = AmbientCoolGray,
+                        fontFamily = JetBrainsMono,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
             }
         }
 

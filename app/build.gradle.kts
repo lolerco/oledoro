@@ -8,6 +8,14 @@ kotlin {
     jvmToolchain(21)
 }
 
+val currentGitBranch: String = try {
+    val process = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD").start()
+    process.inputStream.bufferedReader().readText().trim()
+} catch (_: Exception) {
+    "main"
+}
+val isMainBranch = currentGitBranch == "main" || currentGitBranch == "master" || currentGitBranch.isEmpty()
+
 android {
     namespace = "com.lolerco.oledoro"
     compileSdk = 35
@@ -20,13 +28,17 @@ android {
         versionCode = 6
         versionName = "1.7.0"
 
+        manifestPlaceholders["appName"] = if (isMainBranch) "oledoro" else "oledoro-test"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".test"
-            versionNameSuffix = "-test"
+            if (!isMainBranch) {
+                applicationIdSuffix = ".test"
+                versionNameSuffix = "-test"
+            }
         }
         release {
             isMinifyEnabled = false
@@ -65,8 +77,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.material:material-icons-extended")
 
     // Coroutines
