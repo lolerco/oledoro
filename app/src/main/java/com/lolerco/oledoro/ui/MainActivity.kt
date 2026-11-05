@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -36,6 +37,7 @@ import com.lolerco.oledoro.domain.TimerStatus
 import com.lolerco.oledoro.service.TimerForegroundService
 import com.lolerco.oledoro.ui.ambient.AmbientController
 import com.lolerco.oledoro.ui.ambient.AmbientModeEffect
+import com.lolerco.oledoro.ui.components.SettingsDialog
 import com.lolerco.oledoro.ui.screens.AmbientScreen
 import com.lolerco.oledoro.ui.theme.OledPomodoroTheme
 import kotlinx.coroutines.flow.StateFlow
@@ -227,14 +229,15 @@ class MainActivity : ComponentActivity() {
                 val longBreakInterval by viewModel.longBreakInterval.collectAsStateWithLifecycle()
                 val autoBrightenOnFinish by viewModel.autoBrightenOnFinish.collectAsStateWithLifecycle()
                 val habits by viewModel.habits.collectAsStateWithLifecycle()
+                var showSettingsDialog by remember { mutableStateOf(false) }
 
                 // Top-level AmbientModeEffect to prevent competing window manipulations across pager pages
+                // When navigating to Habidoro (page 1), screen automatically stays undimmed
+                val pagerState = rememberPagerState(pageCount = { 2 })
                 AmbientModeEffect(
-                    dimmingEnabled = isDimmingActive,
+                    dimmingEnabled = isDimmingActive && pagerState.currentPage == 0,
                     dimPercentage = dimPercentage
                 )
-
-                val pagerState = rememberPagerState(pageCount = { 2 })
 
                 HorizontalPager(
                     state = pagerState,
@@ -292,9 +295,7 @@ class MainActivity : ComponentActivity() {
                             HabidoroScreen(
                                 habits = habits,
                                 themeColor = themeColor,
-                                isDimmingActive = isDimmingActive,
-                                dimPercentage = dimPercentage,
-                                onToggleDimming = { viewModel.toggleDimming() },
+                                onOpenSettings = { showSettingsDialog = true },
                                 onToggleHabitCompletion = { habitId, dateStr ->
                                     viewModel.toggleHabitCompletion(habitId, dateStr)
                                 },
@@ -307,6 +308,30 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                }
+
+                if (showSettingsDialog) {
+                    SettingsDialog(
+                        selectedThemeColor = themeColor,
+                        onThemeColorChange = { viewModel.setThemeColor(it) },
+                        selectedBreakColor = breakColor,
+                        onBreakColorChange = { viewModel.setBreakColor(it) },
+                        selectedNegativeColor = negativeColor,
+                        onNegativeColorChange = { viewModel.setNegativeColor(it) },
+                        dimPercentage = dimPercentage,
+                        onDimPercentageChange = { viewModel.setDimPercentage(it) },
+                        focusMinutes = focusMinutes,
+                        onFocusMinutesChange = { viewModel.setFocusMinutes(it) },
+                        shortBreakMinutes = shortBreakMinutes,
+                        onShortBreakMinutesChange = { viewModel.setShortBreakMinutes(it) },
+                        longBreakMinutes = longBreakMinutes,
+                        onLongBreakMinutesChange = { viewModel.setLongBreakMinutes(it) },
+                        longBreakInterval = longBreakInterval,
+                        onLongBreakIntervalChange = { viewModel.setLongBreakInterval(it) },
+                        autoBrightenOnFinish = autoBrightenOnFinish,
+                        onAutoBrightenOnFinishChange = { viewModel.setAutoBrightenOnFinish(it) },
+                        onDismiss = { showSettingsDialog = false }
+                    )
                 }
             }
         }
