@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +41,7 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager, statsRepo: Des
     val coroutineScope = rememberCoroutineScope()
     var settingsDialogVisible by remember { mutableStateOf(false) }
     var statsDialogVisible by remember { mutableStateOf(false) }
+    var currentSubapp by remember { mutableStateOf(0) } // 0 = Oledoro, 1 = Habidoro
 
     // Sync engine time accumulation to stats repo
     LaunchedEffect(engine, statsRepo) {
@@ -75,28 +78,48 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager, statsRepo: Des
                 .fillMaxSize()
                 .background(OledBlack)
         ) {
-            // Top Action Bar (Settings gear)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        HapticHelper.performClick(null)
-                        settingsDialogVisible = true
-                    }
+            if (currentSubapp == 0) {
+                // Top Action Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings",
-                        tint = AmbientCoolGray,
-                        modifier = Modifier.size(26.dp)
-                    )
+                    // Spacer on left to balance or empty Box
+                    Spacer(modifier = Modifier.size(26.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                HapticHelper.performClick(null)
+                                settingsDialogVisible = true
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = AmbientCoolGray,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                        // '>' Navigate to Habidoro on the right of the oledoro timer
+                        IconButton(
+                            onClick = {
+                                HapticHelper.performClick(null)
+                                currentSubapp = 1
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = "Go to Habidoro",
+                                tint = settings.themeColor.color,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
                 }
-            }
 
             // Centered timer display
             Column(
@@ -271,6 +294,59 @@ fun DesktopApp(engine: TimerEngine, settings: AppSettingsManager, statsRepo: Des
                     accentColor = settings.themeColor.color,
                     onDismiss = { statsDialogVisible = false }
                 )
+            }
+            } else {
+                // Habidoro screen
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Top Bar for Habidoro
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 24.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // '<' back to Oledoro on the left of the habidoro screen
+                        IconButton(
+                            onClick = {
+                                HapticHelper.performClick(null)
+                                currentSubapp = 0
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronLeft,
+                                contentDescription = "Back to Oledoro",
+                                tint = settings.themeColor.color,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        Text(
+                            text = "habidoro",
+                            color = AmbientCoolGray,
+                            fontFamily = JetBrainsMono,
+                            fontSize = 11.sp,
+                            letterSpacing = 1.sp
+                        )
+
+                        // Settings button
+                        IconButton(
+                            onClick = {
+                                HapticHelper.performClick(null)
+                                settingsDialogVisible = true
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = AmbientCoolGray,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
