@@ -14,26 +14,43 @@ object HabitStreakCalculator {
     private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     /**
-     * Calculates the current active streak length.
-     * In uhabits, if today is not yet checked, but yesterday was checked,
-     * the streak is still considered alive and counted up to yesterday.
+     * Calculates the current active streak length (counting consecutive days).
+     * - Completed days increment the streak by 1.
+     * - Skipped days prolong the streak without incrementing it.
+     * - If today is not checked (off), but yesterday was active (completed or skipped),
+     *   the streak is alive up through yesterday.
+     * - An off day breaks the streak.
      */
-    fun calculateCurrentStreak(completedDates: Set<String>, today: LocalDate = LocalDate.now()): Int {
-        if (completedDates.isEmpty()) return 0
+    fun calculateCurrentStreak(
+        completedDates: Set<String>,
+        skippedDates: Set<String> = emptySet(),
+        today: LocalDate = LocalDate.now()
+    ): Int {
+        val completed = completedDates.mapNotNull { parseDateOrNull(it) }.toSet()
+        val skipped = skippedDates.mapNotNull { parseDateOrNull(it) }.toSet()
+        if (completed.isEmpty()) return 0
 
-        val parsedDates = completedDates.mapNotNull { parseDateOrNull(it) }.toSet()
         val yesterday = today.minusDays(1)
 
         var currentCheckDate = when {
-            parsedDates.contains(today) -> today
-            parsedDates.contains(yesterday) -> yesterday
+            completed.contains(today) || skipped.contains(today) -> today
+            completed.contains(yesterday) || skipped.contains(yesterday) -> yesterday
             else -> return 0
         }
 
         var streak = 0
-        while (parsedDates.contains(currentCheckDate)) {
-            streak++
-            currentCheckDate = currentCheckDate.minusDays(1)
+        while (true) {
+            when {
+                completed.contains(currentCheckDate) -> {
+                    streak++
+                    currentCheckDate = currentCheckDate.minusDays(1)
+                }
+                skipped.contains(currentCheckDate) -> {
+                    // Skipped prolongs the streak without incrementing it
+                    currentCheckDate = currentCheckDate.minusDays(1)
+                }
+                else -> break
+            }
         }
         return streak
     }
@@ -41,27 +58,32 @@ object HabitStreakCalculator {
     /**
      * Calculates the best (longest) streak across the habit's entire history.
      */
-    fun calculateBestStreak(completedDates: Set<String>): Int {
-        if (completedDates.isEmpty()) return 0
+    fun calculateBestStreak(
+        completedDates: Set<String>,
+        skippedDates: Set<String> = emptySet()
+    ): Int {
+        val completed = completedDates.mapNotNull { parseDateOrNull(it) }.toSet()
+        val skipped = skippedDates.mapNotNull { parseDateOrNull(it) }.toSet()
+        if (completed.isEmpty()) return 0
 
-        val sortedDates = completedDates.mapNotNull { parseDateOrNull(it) }.sorted()
-        if (sortedDates.isEmpty()) return 0
+        val allActive = (completed + skipped).sorted()
+        if (allActive.isEmpty()) return 0
 
-        var bestStreak = 1
-        var currentRun = 1
+        var bestStreak = 0
+        var currentStreak = 0
+        var prevDate: LocalDate? = null
 
-        for (i in 1 until sortedDates.size) {
-            val prev = sortedDates[i - 1]
-            val curr = sortedDates[i]
-
-            if (curr == prev.plusDays(1)) {
-                currentRun++
-                if (currentRun > bestStreak) {
-                    bestStreak = currentRun
-                }
-            } else if (curr != prev) {
-                currentRun = 1
+        for (date in allActive) {
+            if (prevDate != null && date != prevDate.plusDays(1)) {
+                currentStreak = 0
             }
+            if (completed.contains(date)) {
+                currentStreak++
+                if (currentStreak > bestStreak) {
+                    bestStreak = currentStreak
+                }
+            }
+            prevDate = date
         }
 
         return bestStreak
@@ -71,8 +93,8 @@ object HabitStreakCalculator {
      * Computes full statistics mirroring Loop Habit Tracker (uhabits).
      */
     fun calculateStats(habit: Habit, today: LocalDate = LocalDate.now()): HabitStats {
-        val currentStreak = calculateCurrentStreak(habit.completedDates, today)
-        val historicalBest = calculateBestStreak(habit.completedDates)
+        val currentStreak = calculateCurrentStreak(habit.completedDates, habit.skippedDates, today)
+        val historicalBest = calculateBestStreak(habit.completedDates, habit.skippedDates)
         val bestStreak = maxOf(currentStreak, historicalBest)
         val totalCompletions = habit.completedDates.size
 
@@ -114,6 +136,29 @@ object HabitStreakCalculator {
     }
 
     /**
+     * Generates the past 4 days (3 days ago through today) for the compact habit row streak view.
+     */
+    fun getPast4Days(habit: Habit, today: LocalDate = LocalDate.now()): List<DayCheck> {
+        val result = mutableListOf<DayCheck>()
+        for (offset in 3 downTo 0) {
+            val date = today.minusDays(offset.toLong())
+            val dateStr = date.toString()
+            result.add(
+                DayCheck(
+                    date = date,
+                    dateString = dateStr,
+                    dayInitial = formatDayOfWeekInitial(date.dayOfWeek),
+                    dayNumber = date.dayOfMonth,
+                    isCompleted = habit.completedDates.contains(dateStr),
+                    isToday = (offset == 0),
+                    isSkipped = habit.skippedDates.contains(dateStr)
+                )
+            )
+        }
+        return result
+    }
+
+    /**
      * Generates the 7 days of the past week (6 days ago through today).
      */
     fun getPastWeek(habit: Habit, today: LocalDate = LocalDate.now()): List<DayCheck> {
@@ -128,7 +173,8 @@ object HabitStreakCalculator {
                     dayInitial = formatDayOfWeekInitial(date.dayOfWeek),
                     dayNumber = date.dayOfMonth,
                     isCompleted = habit.completedDates.contains(dateStr),
-                    isToday = (offset == 0)
+                    isToday = (offset == 0),
+                    isSkipped = habit.skippedDates.contains(dateStr)
                 )
             )
         }
@@ -150,7 +196,8 @@ object HabitStreakCalculator {
                     dayInitial = formatDayOfWeekInitial(date.dayOfWeek),
                     dayNumber = date.dayOfMonth,
                     isCompleted = habit.completedDates.contains(dateStr),
-                    isToday = (offset == 0)
+                    isToday = (offset == 0),
+                    isSkipped = habit.skippedDates.contains(dateStr)
                 )
             )
         }

@@ -29,7 +29,7 @@ class HabitStreakCalculatorTest {
             baseDate.minusDays(1).toString(),
             baseDate.minusDays(2).toString()
         )
-        val streak = HabitStreakCalculator.calculateCurrentStreak(completed, baseDate)
+        val streak = HabitStreakCalculator.calculateCurrentStreak(completed, today = baseDate)
         assertEquals(3, streak)
     }
 
@@ -41,7 +41,7 @@ class HabitStreakCalculatorTest {
             baseDate.minusDays(3).toString()
         )
         // Today is not checked, but yesterday was, so the streak is 3 and not broken
-        val streak = HabitStreakCalculator.calculateCurrentStreak(completed, baseDate)
+        val streak = HabitStreakCalculator.calculateCurrentStreak(completed, today = baseDate)
         assertEquals(3, streak)
     }
 
@@ -51,7 +51,7 @@ class HabitStreakCalculatorTest {
             baseDate.minusDays(2).toString(),
             baseDate.minusDays(3).toString()
         )
-        val streak = HabitStreakCalculator.calculateCurrentStreak(completed, baseDate)
+        val streak = HabitStreakCalculator.calculateCurrentStreak(completed, today = baseDate)
         assertEquals(0, streak)
     }
 
@@ -68,8 +68,36 @@ class HabitStreakCalculatorTest {
         val best = HabitStreakCalculator.calculateBestStreak(dates)
         assertEquals(8, best)
 
-        val current = HabitStreakCalculator.calculateCurrentStreak(dates, baseDate)
+        val current = HabitStreakCalculator.calculateCurrentStreak(dates, today = baseDate)
         assertEquals(3, current)
+    }
+
+    @Test
+    fun `skipped days prolong current streak without incrementing it`() {
+        // Today = completed, yesterday = skipped, 2 days ago = completed -> streak = 2
+        val completed = setOf(baseDate.toString(), baseDate.minusDays(2).toString())
+        val skipped = setOf(baseDate.minusDays(1).toString())
+        val streak = HabitStreakCalculator.calculateCurrentStreak(completed, skipped, baseDate)
+        assertEquals(2, streak)
+    }
+
+    @Test
+    fun `getPast4Days returns exactly 4 days ending on today`() {
+        val habit = Habit(
+            id = "h1",
+            name = "Read",
+            completedDates = setOf(baseDate.toString(), baseDate.minusDays(2).toString()),
+            skippedDates = setOf(baseDate.minusDays(1).toString())
+        )
+        val past4 = HabitStreakCalculator.getPast4Days(habit, baseDate)
+
+        assertEquals(4, past4.size)
+        assertEquals(baseDate.minusDays(3), past4.first().date)
+        assertEquals(baseDate, past4.last().date)
+        assertTrue(past4.last().isToday)
+        assertTrue(past4.last().isCompleted)
+        assertTrue(past4[past4.size - 2].isSkipped)
+        assertTrue(past4[past4.size - 3].isCompleted)
     }
 
     @Test
