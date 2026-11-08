@@ -43,6 +43,7 @@ import com.lolerco.oledoro.habits.HabitStreakCalculator
 import com.lolerco.oledoro.ui.components.AddHabitDialog
 import com.lolerco.oledoro.ui.components.EditHabitDialog
 import com.lolerco.oledoro.ui.components.HabidoroOverviewBottomSheet
+import com.lolerco.oledoro.ui.components.HabidoroSettingsDialog
 import com.lolerco.oledoro.ui.components.HabitRow
 import com.lolerco.oledoro.ui.components.HabitStatsBottomSheet
 import com.lolerco.oledoro.ui.theme.AmbientCoolGray
@@ -70,6 +71,7 @@ fun HabidoroScreen(
     onToggleHabitCompletion: (habitId: String, dateString: String) -> Unit,
     onAddHabit: (name: String, color: GruvboxColor, targetDaysPerWeek: Int) -> Unit,
     onUpdateHabit: (habitId: String, name: String, color: GruvboxColor, targetDaysPerWeek: Int) -> Unit = { _, _, _, _ -> },
+    onImportHabits: (List<Habit>) -> Unit = {},
     onDeleteHabit: (habitId: String) -> Unit
 ) {
     val context = LocalContext.current
@@ -80,6 +82,7 @@ fun HabidoroScreen(
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }
     var overviewSheetVisible by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var showHabidoroSettingsDialog by remember { mutableStateOf(false) }
 
     val burnInOffset by rememberBurnInShift()
 
@@ -133,11 +136,11 @@ fun HabidoroScreen(
                     letterSpacing = 1.sp
                 )
 
-                // Settings button
+                // Settings button (Habidoro specific settings: CSV Export / Import, etc.)
                 IconButton(
                     onClick = {
                         HapticHelper.performClick(context)
-                        onOpenSettings()
+                        showHabidoroSettingsDialog = true
                     }
                 ) {
                     Icon(
@@ -283,6 +286,20 @@ fun HabidoroScreen(
                 onConfirm = { name, color, targetDays ->
                     onAddHabit(name, color, targetDays)
                     showAddDialog = false
+                }
+            )
+        }
+
+        // 5. Habidoro Settings Dialog (CSV Import / Export)
+        if (showHabidoroSettingsDialog) {
+            HabidoroSettingsDialog(
+                habits = habits,
+                themeColor = themeColor,
+                onImportHabits = { imported ->
+                    onImportHabits(imported)
+                },
+                onDismissRequest = {
+                    showHabidoroSettingsDialog = false
                 }
             )
         }

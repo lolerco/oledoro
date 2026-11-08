@@ -175,6 +175,39 @@ class AndroidHabitRepository(context: Context) {
     }
 
     @Synchronized
+    fun setHabits(newList: List<Habit>) {
+        _habits.value = newList
+        saveToPrefs(newList)
+    }
+
+    @Synchronized
+    fun importHabits(imported: List<Habit>, merge: Boolean = true): Int {
+        val current = _habits.value
+        val updated = if (!merge) {
+            imported
+        } else {
+            val map = current.associateBy { it.name.trim().lowercase() }.toMutableMap()
+            for (h in imported) {
+                val key = h.name.trim().lowercase()
+                val existing = map[key]
+                if (existing != null) {
+                    map[key] = existing.copy(
+                        completedDates = existing.completedDates + h.completedDates,
+                        skippedDates = existing.skippedDates + h.skippedDates,
+                        targetDaysPerWeek = if (h.targetDaysPerWeek != 7) h.targetDaysPerWeek else existing.targetDaysPerWeek
+                    )
+                } else {
+                    map[key] = h
+                }
+            }
+            map.values.toList()
+        }
+        _habits.value = updated
+        saveToPrefs(updated)
+        return imported.size
+    }
+
+    @Synchronized
     fun flush() {
         saveToPrefs(_habits.value)
     }
