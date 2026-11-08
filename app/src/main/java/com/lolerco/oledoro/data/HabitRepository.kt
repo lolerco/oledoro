@@ -43,7 +43,8 @@ class AndroidHabitRepository(context: Context) {
                         today.minusDays(2).toString(),
                         today.minusDays(3).toString(),
                         today.minusDays(4).toString()
-                    )
+                    ),
+                    targetDaysPerWeek = 7
                 ),
                 Habit(
                     id = UUID.randomUUID().toString(),
@@ -54,7 +55,8 @@ class AndroidHabitRepository(context: Context) {
                         today.minusDays(1).toString(),
                         today.minusDays(2).toString(),
                         today.minusDays(3).toString()
-                    )
+                    ),
+                    targetDaysPerWeek = 5
                 ),
                 Habit(
                     id = UUID.randomUUID().toString(),
@@ -64,7 +66,8 @@ class AndroidHabitRepository(context: Context) {
                     completedDates = setOf(
                         today.toString(),
                         today.minusDays(2).toString()
-                    )
+                    ),
+                    targetDaysPerWeek = 3
                 )
             )
             _habits.value = initial
@@ -85,13 +88,18 @@ class AndroidHabitRepository(context: Context) {
     }
 
     @Synchronized
-    fun addHabit(name: String, color: GruvboxColor = GruvboxColor.YELLOW): Habit {
+    fun addHabit(
+        name: String,
+        color: GruvboxColor = GruvboxColor.YELLOW,
+        targetDaysPerWeek: Int = 7
+    ): Habit {
         val newHabit = Habit(
             id = UUID.randomUUID().toString(),
             name = name.trim(),
             color = color,
             createdAt = LocalDate.now().toString(),
-            completedDates = emptySet()
+            completedDates = emptySet(),
+            targetDaysPerWeek = targetDaysPerWeek
         )
         val updated = _habits.value + newHabit
         _habits.value = updated

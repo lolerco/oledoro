@@ -35,7 +35,8 @@ data class HabitStats(
     val totalCompletions: Int,
     val weeklyRatePercent: Int,
     val monthlyRatePercent: Int,
-    val allTimeRatePercent: Int
+    val allTimeRatePercent: Int,
+    val streakUnit: String = "days"
 )
 
 /**

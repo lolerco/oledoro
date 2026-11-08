@@ -110,7 +110,7 @@ fun HabitStatsBottomSheet(
                         color = habit.color.color
                     )
                     Text(
-                        text = "HABIT STATISTICS & STREAKS",
+                        text = "TARGET: ${if (habit.targetDaysPerWeek == 7) "EVERY DAY (7d/wk)" else "${habit.targetDaysPerWeek} DAYS / WEEK"}",
                         fontFamily = JetBrainsMono,
                         fontSize = 11.sp,
                         color = AmbientCoolGray.copy(alpha = 0.8f)
@@ -129,6 +129,8 @@ fun HabitStatsBottomSheet(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Primary Stats Cards (uhabits streak cards)
+            val unit = if (habit.targetDaysPerWeek == 7) "d" else if (stats.currentStreak == 1) "wk" else "wks"
+            val bestUnit = if (habit.targetDaysPerWeek == 7) "d" else if (stats.bestStreak == 1) "wk" else "wks"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -136,13 +138,13 @@ fun HabitStatsBottomSheet(
                 HabitMetricCard(
                     modifier = Modifier.weight(1f),
                     label = "CURRENT STREAK",
-                    value = "${stats.currentStreak} d",
+                    value = "${stats.currentStreak} $unit",
                     accentColor = habit.color.color
                 )
                 HabitMetricCard(
                     modifier = Modifier.weight(1f),
                     label = "BEST STREAK",
-                    value = "${stats.bestStreak} d",
+                    value = "${stats.bestStreak} $bestUnit",
                     accentColor = habit.color.color
                 )
             }

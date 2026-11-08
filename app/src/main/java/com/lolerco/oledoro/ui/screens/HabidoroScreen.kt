@@ -74,7 +74,7 @@ fun HabidoroScreen(
     themeColor: GruvboxColor,
     onOpenSettings: () -> Unit = {},
     onToggleHabitCompletion: (habitId: String, dateString: String) -> Unit,
-    onAddHabit: (name: String, color: GruvboxColor) -> Unit,
+    onAddHabit: (name: String, color: GruvboxColor, targetDaysPerWeek: Int) -> Unit,
     onDeleteHabit: (habitId: String) -> Unit
 ) {
     val context = LocalContext.current
@@ -89,7 +89,7 @@ fun HabidoroScreen(
 
     // Global overview stats across all habits for bottom summary card
     val totalActiveStreak = remember(habits) {
-        habits.sumOf { HabitStreakCalculator.calculateCurrentStreak(it.completedDates, it.skippedDates, today) }
+        habits.sumOf { HabitStreakCalculator.calculateCurrentStreak(it, today) }
     }
     val totalDoneToday = remember(habits) {
         habits.count { it.completedDates.contains(today.toString()) }
@@ -259,8 +259,8 @@ fun HabidoroScreen(
         if (showAddDialog) {
             AddHabitDialog(
                 onDismiss = { showAddDialog = false },
-                onConfirm = { name, color ->
-                    onAddHabit(name, color)
+                onConfirm = { name, color, targetDays ->
+                    onAddHabit(name, color, targetDays)
                     showAddDialog = false
                 }
             )

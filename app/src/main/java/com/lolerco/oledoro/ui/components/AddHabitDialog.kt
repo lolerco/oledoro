@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,15 +39,16 @@ import com.lolerco.oledoro.ui.theme.AmbientDimGray
 import com.lolerco.oledoro.ui.theme.JetBrainsMono
 
 /**
- * Dialog for creating a new habit with custom name and Gruvbox accent color.
+ * Dialog for creating a new habit with custom name, target frequency (uhabits style), and Gruvbox accent color.
  */
 @Composable
 fun AddHabitDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, color: GruvboxColor) -> Unit
+    onConfirm: (name: String, color: GruvboxColor, targetDaysPerWeek: Int) -> Unit
 ) {
     var habitName by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf(GruvboxColor.YELLOW) }
+    var targetDaysPerWeek by remember { mutableIntStateOf(7) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -97,6 +99,57 @@ fun AddHabitDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
+                    text = "Target Frequency:",
+                    fontFamily = JetBrainsMono,
+                    fontSize = 12.sp,
+                    color = AmbientCoolGray
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (targetDaysPerWeek == 7) "Every day (7 days / week)" else "$targetDaysPerWeek days per week",
+                    fontFamily = JetBrainsMono,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = selectedColor.color
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Target frequency selector chips: 1 to 7 days per week
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    (1..7).forEach { days ->
+                        val isSelected = days == targetDaysPerWeek
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isSelected) selectedColor.color else Color(0xFF161616)
+                                )
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) Color.White else AmbientDimGray.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable { targetDaysPerWeek = days },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "$days",
+                                fontFamily = JetBrainsMono,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color.Black else AmbientCoolGray
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
                     text = "Accent Color:",
                     fontFamily = JetBrainsMono,
                     fontSize = 12.sp,
@@ -132,7 +185,7 @@ fun AddHabitDialog(
             TextButton(
                 onClick = {
                     if (habitName.isNotBlank()) {
-                        onConfirm(habitName.trim(), selectedColor)
+                        onConfirm(habitName.trim(), selectedColor, targetDaysPerWeek)
                     }
                 },
                 enabled = habitName.isNotBlank()

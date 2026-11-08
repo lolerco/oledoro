@@ -140,4 +140,74 @@ class HabitStreakCalculatorTest {
         // 4 / 7 = 57%
         assertEquals(57, stats.weeklyRatePercent)
     }
+
+    @Test
+    fun `weekly habit streak counts weeks reaching targetDaysPerWeek`() {
+        // Target: 3 times a week
+        // baseDate is Friday Oct 30, 2026. Monday was Oct 26.
+        // Week 1 (Oct 26 - Nov 1): Completed Oct 26, 28, 30 -> 3 completions (target reached!)
+        // Week 2 (Oct 19 - Oct 25): Completed Oct 19, 21, 23 -> 3 completions (target reached!)
+        // Week 3 (Oct 12 - Oct 18): Completed Oct 12, 14, 16 -> 3 completions (target reached!)
+        // Week 4 (Oct 5 - Oct 11): Completed Oct 5 -> 1 completion (failed, streak breaks)
+        val completed = setOf(
+            LocalDate.of(2026, 10, 30).toString(),
+            LocalDate.of(2026, 10, 28).toString(),
+            LocalDate.of(2026, 10, 26).toString(),
+            LocalDate.of(2026, 10, 23).toString(),
+            LocalDate.of(2026, 10, 21).toString(),
+            LocalDate.of(2026, 10, 19).toString(),
+            LocalDate.of(2026, 10, 16).toString(),
+            LocalDate.of(2026, 10, 14).toString(),
+            LocalDate.of(2026, 10, 12).toString(),
+            LocalDate.of(2026, 10, 5).toString()
+        )
+        val streak = HabitStreakCalculator.calculateCurrentStreak(
+            completedDates = completed,
+            today = baseDate,
+            targetDaysPerWeek = 3
+        )
+        assertEquals(3, streak)
+    }
+
+    @Test
+    fun `weekly habit keeps streak alive mid-week if target is still reachable`() {
+        // baseDate is Wednesday Oct 28, 2026.
+        // Week 1 (current): Completed Oct 27 (1 so far), target = 3.
+        // Days remaining in week: Oct 29, 30, 31, Nov 1 (4 days left). Total possible = 1 + 4 = 5 >= 3.
+        // Prior week (Oct 19 - 25): 3 completions.
+        val wednesday = LocalDate.of(2026, 10, 28)
+        val completed = setOf(
+            LocalDate.of(2026, 10, 27).toString(),
+            LocalDate.of(2026, 10, 23).toString(),
+            LocalDate.of(2026, 10, 21).toString(),
+            LocalDate.of(2026, 10, 19).toString()
+        )
+        val streak = HabitStreakCalculator.calculateCurrentStreak(
+            completedDates = completed,
+            today = wednesday,
+            targetDaysPerWeek = 3
+        )
+        // Prior week was 1, current week is still viable so prior streak of 1 is preserved
+        assertEquals(1, streak)
+    }
+
+    @Test
+    fun `weekly habit breaks streak if target is mathematically impossible`() {
+        // baseDate is Sunday Nov 1, 2026 (last day of week).
+        // Week 1 (current): Only completed Oct 27 (1 completion). Target = 3.
+        // No more days left this week -> cannot reach target -> current streak is 0.
+        val sunday = LocalDate.of(2026, 11, 1)
+        val completed = setOf(
+            LocalDate.of(2026, 10, 27).toString(),
+            LocalDate.of(2026, 10, 23).toString(),
+            LocalDate.of(2026, 10, 21).toString(),
+            LocalDate.of(2026, 10, 19).toString()
+        )
+        val streak = HabitStreakCalculator.calculateCurrentStreak(
+            completedDates = completed,
+            today = sunday,
+            targetDaysPerWeek = 3
+        )
+        assertEquals(0, streak)
+    }
 }

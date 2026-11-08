@@ -78,7 +78,7 @@ fun HabitRow(
                 color = if (stats.currentStreak > 0) habit.color.color else AmbientDimGray
             )
             Text(
-                text = "days",
+                text = if (habit.targetDaysPerWeek == 7) "days" else if (stats.currentStreak == 1) "wk" else "wks",
                 fontFamily = JetBrainsMono,
                 fontSize = 9.sp,
                 color = AmbientCoolGray.copy(alpha = 0.6f)
@@ -88,18 +88,27 @@ fun HabitRow(
         Spacer(modifier = Modifier.width(8.dp))
 
         // 2. HABIT NAME IN THE MIDDLE
-        Text(
-            text = habit.name,
-            fontFamily = JetBrainsMono,
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = Color.White,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        Column(
             modifier = Modifier
                 .weight(1f)
                 .padding(end = 8.dp)
-        )
+        ) {
+            Text(
+                text = habit.name,
+                fontFamily = JetBrainsMono,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = if (habit.targetDaysPerWeek == 7) "daily" else "${habit.targetDaysPerWeek}x / week",
+                fontFamily = JetBrainsMono,
+                fontSize = 10.sp,
+                color = AmbientCoolGray.copy(alpha = 0.6f)
+            )
+        }
 
         // 3. STREAK OF THE PAST 4 DAYS (compact checks on the right)
         Row(
