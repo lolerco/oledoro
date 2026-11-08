@@ -3,11 +3,10 @@ package com.lolerco.oledoro.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,18 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,29 +44,34 @@ import com.lolerco.oledoro.ui.theme.JetBrainsMono
 import java.time.LocalDate
 
 /**
- * Slide-up bottom sheet displaying deep habit statistics matching uhabits (Loop Habit Tracker):
- * - Current streak & Best streak
- * - Total repetitions
- * - Weekly rate (past 7 days %)
- * - Monthly rate (past 30 days %)
- * - All-time rate (%)
- * - 30-day activity matrix
- * - Delete habit option
+ * Detailed Stats & Settings Bottom Sheet for a single Habit.
+ * Shown exclusively when tapping the habit row.
+ * Includes:
+ * - Habit title and target frequency
+ * - Edit and Delete actions
+ * - Current & Best Streaks
+ * - Total checks, 7-day rate, 30-day rate, all-time rate
+ * - 365-day uhabits-style interactive history grid (7 rows x 52 columns) where tapping past days toggles their state
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitStatsBottomSheet(
     habit: Habit,
     today: LocalDate = LocalDate.now(),
-    onDeleteHabit: (String) -> Unit,
-    onDismissRequest: () -> Unit,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    onEditHabit: () -> Unit,
+    onDeleteHabit: (habitId: String) -> Unit,
+    onToggleDate: (dateString: String) -> Unit,
+    onDismissRequest: () -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     val stats = remember(habit.completedDates, habit.skippedDates, today) {
         HabitStreakCalculator.calculateStats(habit, today)
     }
-    val past30Days = remember(habit.completedDates, habit.skippedDates, today) {
-        HabitStreakCalculator.getPast30Days(habit, today)
+
+    // 364 days back to today = 365 days total (52 weeks of 7 days plus remainder)
+    val pastYearDays = remember(habit.completedDates, habit.skippedDates, today) {
+        HabitStreakCalculator.getPastDays(habit, daysCount = 365, today = today)
     }
 
     ModalBottomSheet(
@@ -76,26 +79,25 @@ fun HabitStatsBottomSheet(
         sheetState = sheetState,
         containerColor = Color.Black,
         scrimColor = Color.Black.copy(alpha = 0.7f),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         dragHandle = {
             Box(
                 modifier = Modifier
                     .padding(vertical = 12.dp)
-                    .width(40.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(AmbientDimGray.copy(alpha = 0.5f))
+                    .size(width = 36.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(AmbientDimGray)
             )
         }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp)
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(bottom = 32.dp)
         ) {
-            // Header row with habit title & delete button
+            // Header row with Name, Edit, and Delete buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -106,9 +108,10 @@ fun HabitStatsBottomSheet(
                         text = habit.name.uppercase(),
                         fontFamily = JetBrainsMono,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = 17.sp,
                         color = habit.color.color
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "TARGET: ${if (habit.targetDaysPerWeek == 7) "EVERY DAY (7d/wk)" else "${habit.targetDaysPerWeek} DAYS / WEEK"}",
                         fontFamily = JetBrainsMono,
@@ -117,12 +120,21 @@ fun HabitStatsBottomSheet(
                     )
                 }
 
-                IconButton(onClick = { onDeleteHabit(habit.id) }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Habit",
-                        tint = AmbientDimGray
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onEditHabit) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Habit Settings",
+                            tint = habit.color.color
+                        )
+                    }
+                    IconButton(onClick = { onDeleteHabit(habit.id) }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Habit",
+                            tint = AmbientDimGray
+                        )
+                    }
                 }
             }
 
@@ -154,7 +166,7 @@ fun HabitStatsBottomSheet(
             // Secondary Stats Cards (Rates & Totals)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 HabitMetricCard(
                     modifier = Modifier.weight(1f),
@@ -174,31 +186,69 @@ fun HabitStatsBottomSheet(
                     value = "${stats.monthlyRatePercent}%",
                     accentColor = habit.color.color
                 )
+                HabitMetricCard(
+                    modifier = Modifier.weight(1f),
+                    label = "ALL-TIME",
+                    value = "${stats.allTimeRatePercent}%",
+                    accentColor = habit.color.color
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 30-Day Activity History Grid
+            // 365-Day uhabits Interactive History Grid
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "365-DAY HISTORY (TAP TO EDIT)",
+                    fontFamily = JetBrainsMono,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = AmbientCoolGray,
+                    letterSpacing = 0.5.sp
+                )
+                Text(
+                    text = "← scroll →",
+                    fontFamily = JetBrainsMono,
+                    fontSize = 10.sp,
+                    color = AmbientDimGray
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "30-DAY HISTORY",
+                text = "Tap any past day to toggle: off → completed → skipped",
                 fontFamily = JetBrainsMono,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = AmbientCoolGray,
-                letterSpacing = 1.sp
+                fontSize = 10.sp,
+                color = AmbientDimGray
             )
             Spacer(modifier = Modifier.height(10.dp))
 
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            // Calendar contribution-style grid: 7 rows (Mon-Sun), columns for weeks
+            val horizontalScrollState = rememberScrollState(initial = Int.MAX_VALUE)
+            val weekColumns = remember(pastYearDays) {
+                pastYearDays.chunked(7)
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(horizontalScrollState)
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                past30Days.forEach { day ->
-                    HistoryDayDot(
-                        day = day,
-                        accentColor = habit.color.color
-                    )
+                weekColumns.forEach { week ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        week.forEach { day ->
+                            HistoryDayTile(
+                                day = day,
+                                accentColor = habit.color.color,
+                                onClick = { onToggleDate(day.dateString) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -217,13 +267,13 @@ private fun HabitMetricCard(
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, AmbientDimGray.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
             .background(Color(0xFF0F0F0F))
-            .padding(12.dp)
+            .padding(10.dp)
     ) {
         Column {
             Text(
                 text = label,
                 fontFamily = JetBrainsMono,
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 color = AmbientCoolGray.copy(alpha = 0.7f)
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -231,7 +281,7 @@ private fun HabitMetricCard(
                 text = value,
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 color = accentColor
             )
         }
@@ -239,19 +289,20 @@ private fun HabitMetricCard(
 }
 
 @Composable
-private fun HistoryDayDot(
+private fun HistoryDayTile(
     day: DayCheck,
-    accentColor: Color
+    accentColor: Color,
+    onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
-            .size(24.dp)
-            .clip(RoundedCornerShape(4.dp))
+            .size(19.dp)
+            .clip(RoundedCornerShape(3.dp))
             .background(
                 when {
                     day.isCompleted -> accentColor
-                    day.isSkipped -> accentColor.copy(alpha = 0.25f)
-                    else -> Color(0xFF161616)
+                    day.isSkipped -> accentColor.copy(alpha = 0.35f)
+                    else -> Color(0xFF141414)
                 }
             )
             .border(
@@ -260,22 +311,20 @@ private fun HistoryDayDot(
                     day.isCompleted -> accentColor
                     day.isSkipped -> accentColor
                     day.isToday -> Color.White
-                    else -> AmbientDimGray.copy(alpha = 0.3f)
+                    else -> AmbientDimGray.copy(alpha = 0.25f)
                 },
-                shape = RoundedCornerShape(4.dp)
-            ),
+                shape = RoundedCornerShape(3.dp)
+            )
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "${day.dayNumber}",
-            fontFamily = JetBrainsMono,
-            fontSize = 9.sp,
-            fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.Normal,
-            color = when {
-                day.isCompleted -> Color.Black
-                day.isSkipped -> accentColor
-                else -> AmbientCoolGray.copy(alpha = 0.6f)
-            }
-        )
+        if (day.isToday) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(if (day.isCompleted) Color.Black else Color.White)
+            )
+        }
     }
 }

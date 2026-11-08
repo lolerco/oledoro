@@ -337,6 +337,30 @@ object HabitStreakCalculator {
     }
 
     /**
+     * Generates history for a given number of days (default 365, mirroring Loop Habit Tracker's full-year view)
+     * ordered chronologically from oldest (364 days ago) to newest (today).
+     */
+    fun getPastDays(habit: Habit, daysCount: Int = 365, today: LocalDate = LocalDate.now()): List<DayCheck> {
+        val result = mutableListOf<DayCheck>()
+        for (offset in (daysCount - 1) downTo 0) {
+            val date = today.minusDays(offset.toLong())
+            val dateStr = date.toString()
+            result.add(
+                DayCheck(
+                    date = date,
+                    dateString = dateStr,
+                    dayInitial = formatDayOfWeekInitial(date.dayOfWeek),
+                    dayNumber = date.dayOfMonth,
+                    isCompleted = habit.completedDates.contains(dateStr),
+                    isToday = (offset == 0),
+                    isSkipped = habit.skippedDates.contains(dateStr)
+                )
+            )
+        }
+        return result
+    }
+
+    /**
      * Generates the past 30 days for detailed calendar history grid.
      */
     fun getPast30Days(habit: Habit, today: LocalDate = LocalDate.now()): List<DayCheck> {

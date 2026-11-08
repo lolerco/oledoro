@@ -115,6 +115,28 @@ class AndroidHabitRepository(context: Context) {
     }
 
     @Synchronized
+    fun updateHabit(
+        id: String,
+        name: String,
+        color: GruvboxColor,
+        targetDaysPerWeek: Int
+    ) {
+        val updated = _habits.value.map { habit ->
+            if (habit.id == id) {
+                habit.copy(
+                    name = name.trim(),
+                    color = color,
+                    targetDaysPerWeek = targetDaysPerWeek.coerceIn(1, 7)
+                )
+            } else {
+                habit
+            }
+        }
+        _habits.value = updated
+        saveToPrefs(updated)
+    }
+
+    @Synchronized
     fun toggleHabitCompletion(id: String, dateString: String = LocalDate.now().toString()): Boolean {
         var nowCompleted = false
         val updated = _habits.value.map { habit ->

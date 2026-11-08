@@ -173,6 +173,8 @@ class MainViewModel : ViewModel() {
 
     fun addHabit(name: String, color: GruvboxColor, targetDaysPerWeek: Int = 7) =
         habitRepository.addHabit(name, color, targetDaysPerWeek)
+    fun updateHabit(id: String, name: String, color: GruvboxColor, targetDaysPerWeek: Int) =
+        habitRepository.updateHabit(id, name, color, targetDaysPerWeek)
     fun deleteHabit(habitId: String) = habitRepository.deleteHabit(habitId)
     fun toggleHabitCompletion(habitId: String, dateString: String) = habitRepository.toggleHabitCompletion(habitId, dateString)
     fun flushHabits() = habitRepository.flush()
@@ -302,6 +304,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onAddHabit = { name, color, targetDays ->
                                     viewModel.addHabit(name, color, targetDays)
+                                },
+                                onUpdateHabit = { habitId, name, color, targetDays ->
+                                    viewModel.updateHabit(habitId, name, color, targetDays)
                                 },
                                 onDeleteHabit = { habitId ->
                                     viewModel.deleteHabit(habitId)
